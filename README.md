@@ -36,5 +36,10 @@ Arbiter uses dotenv gem to setup environment. File named `.env` has not been com
 
 This would be template for `.env` file needed in DTK Arbiter folder.
 
+### Run
+
+From dtk-arbiter folder run command:
+
+  ruby start.rb
 
 
