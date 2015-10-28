@@ -13,7 +13,7 @@ DTK Arbiter is ruby process which uses EventMachine for continus running, transf
 
 Make sure that Bundler gem is installed.
 
-  gem install bundler
+    gem install bundler
 
 ### Setup
 
@@ -27,12 +27,12 @@ After cloning project from github make sure you run following command
 
 Arbiter uses dotenv gem to setup environment. File named `.env` has not been commited due to obvious security implications. Following are environment variables needed to start DTK Arbiter.
 
-  STOMP_HOST=
-  STOMP_PORT=
-  STOMP_USERNAME=
-  STOMP_PASSWORD=
-  INBOX_TOPIC=mcollective.dtk.reply
-  OUTBOX_TOPIC=mcollective.dtk
+    STOMP_HOST=
+    STOMP_PORT=
+    STOMP_USERNAME=
+    STOMP_PASSWORD=
+    INBOX_TOPIC=mcollective.dtk.reply
+    OUTBOX_TOPIC=mcollective.dtk
 
 This would be template for `.env` file needed in DTK Arbiter folder.
 
@@ -40,6 +40,6 @@ This would be template for `.env` file needed in DTK Arbiter folder.
 
 From dtk-arbiter folder run command:
 
-  ruby start.rb
+    ruby start.rb
 
 
