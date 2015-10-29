@@ -39,12 +39,20 @@ module Arbiter
 
     def update(results, request_id)
       raise "Request_id is mandatory param" unless request_id
+
+      message = {
+        data: results,
+        request_id: request_id,
+        pbuilderid: Arbiter::PBUILDER_ID,
+        status: :ok,
+        statuscode: 0
+      }
       # DEBUG SNIPPET >>> REMOVE <<<
       require 'ap'
       ap "Sednign reply mcollective.dtk.reply"
-      ap results
+      ap message
       # send("#{ENV['OUTBOX_TOPIC']}.#{request_id}", encode64(results))
-      send("mcollective.dtk.reply", encode64(results))
+      send("mcollective.dtk.reply", encode64(message))
     end
 
 
