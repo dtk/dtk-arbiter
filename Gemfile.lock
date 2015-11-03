@@ -3,6 +3,14 @@ GEM
   specs:
     after_do (0.3.1)
     awesome_print (1.6.1)
+    columnize (0.9.0)
+    daemons (1.2.3)
+    debugger (1.6.8)
+      columnize (>= 0.3.1)
+      debugger-linecache (~> 1.2.0)
+      debugger-ruby_core_source (~> 1.3.5)
+    debugger-linecache (1.2.0)
+    debugger-ruby_core_source (1.3.8)
     dotenv (2.0.2)
     eventmachine (1.0.8)
     git (1.2.9.1)
@@ -14,7 +22,12 @@ PLATFORMS
 DEPENDENCIES
   after_do
   awesome_print
+  daemons
+  debugger
   dotenv
   eventmachine
   git (= 1.2.9.1)
   json (= 1.8.2)
+
+BUNDLED WITH
+   1.10.6
