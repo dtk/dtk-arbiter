@@ -26,7 +26,7 @@ module Arbiter
         # @commander.run()
 
         # results = @commander.results()
-        results = ['radi', 'radi2', 'radi3']
+        results = [{:name => 'radi'}, {:name => 'radi2'}, {:name => 'radi3'}]
         notify(results)
       end
 

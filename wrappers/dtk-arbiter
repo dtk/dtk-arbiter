@@ -1,0 +1,9 @@
+#!/usr/share/ruby
+
+
+# /opt/puppet-omnibus/embedded/bin/ruby
+bindir = '/usr/share/dtk/dtk-arbiter'
+Dir.chdir bindir
+require_relative "#{bindir}/start.rb"
+
+# require File.expand_path('../../start', __FILE__)
