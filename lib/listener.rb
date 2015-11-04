@@ -13,12 +13,12 @@ module Arbiter
     include EM::Protocols::Stomp
 
     def connection_completed
-      connect :login => ENV['STOMP_USERNAME'], :passcode => ENV['STOMP_PASSWORD']
+      connect :login => Utils::Config.stomp_username, :passcode => Utils::Config.stomp_password
     end
 
     def receive_msg msg
       if "CONNECTED".eql?(msg.command)
-        subscribe ENV['INBOX_TOPIC']
+        subscribe Utils::Config.inbox_topic
       elsif "ERROR".eql?(msg.command)
         raise msg.header['message']
       else
@@ -52,7 +52,7 @@ module Arbiter
       ap "Sednign reply mcollective.dtk.reply"
       ap message
       # send("#{ENV['OUTBOX_TOPIC']}.#{request_id}", encode64(results))
-      send("mcollective.dtk.reply", encode64(message))
+      send(Utils::Config.outbox_topic, encode64(message))
     end
 
 
