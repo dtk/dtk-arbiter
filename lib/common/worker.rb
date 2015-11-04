@@ -24,6 +24,10 @@ module Arbiter
         @listener.update(errors: [error_message], time: Time.now.to_s)
       end
 
+      def to_s
+        "#{self.class}"
+      end
+
     end
   end
 end

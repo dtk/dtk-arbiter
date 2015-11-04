@@ -11,30 +11,30 @@ module Arbiter
       attr_accessor :position_file_info, :exitstatus, :started, :out, :err, :backtrace, :owner, :mode
 
       def initialize(command_hash)
-        source_info, target_info = command_hash['source'], command_hash['target']
+        source_info, target_info = command_hash[:source], command_hash[:target]
 
         @exited     = false
         @started    = false
         @exitstatus = 0
 
-        @type    = source_info['type'].to_sym
-        @git_url = source_info['url']
-        @branch  = source_info['ref'] || 'master'
-        @content = source_info['content']
+        @type    = source_info[:type].to_sym
+        @git_url = source_info[:url]
+        @branch  = source_info[:ref] || 'master'
+        @content = source_info[:content]
 
-        @owner  = command_hash['owner']
+        @owner  = command_hash[owner]
 
-        if command_hash['mode']
-          if Utils::Permission.check(command_hash['mode'])
-            @mode   = command_hash['mode'].to_s.oct
+        if command_hash[:mode]
+          if Utils::Permission.check(command_hash[:mode])
+            @mode   = command_hash[:mode].to_s.oct
           else
-            trigger_error("Permissions '#{command_hash['mode']}' are not valid, aborting operation")
+            trigger_error("Permissions '#{command_hash[:mode]}' are not valid, aborting operation")
           end
         end
 
-        @env_vars = command_hash['env_vars']
+        @env_vars = command_hash[:env_vars]
 
-        @target_path = target_info['path']
+        @target_path = target_info[:path]
       end
 
       def start_task()

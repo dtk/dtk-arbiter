@@ -11,7 +11,7 @@ module Arbiter
 
       def initialize(execution_list)
         @command_tasks  = execution_list.collect do |command|
-          if (command['type'].eql?('file'))
+          if ('file'.eql?(command[:type]))
             Position.new(command)
           else
             Command.new(command)

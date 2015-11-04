@@ -23,13 +23,8 @@ module Arbiter
         raise msg.header['message']
       else
         original_message = decode64(msg.body)
-
-        # DEBUG SNIPPET >>> REMOVE <<<
-        require 'ap'
-        ap "Here is msg"
-        ap original_message
-
         target_instance = worker_factory(original_message)
+        puts "Arbiter worker has been choosen #{target_instance}, starting work ..."
 
         EM.defer(proc do
           target_instance.process()

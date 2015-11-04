@@ -17,16 +17,15 @@ module Arbiter
       end
 
       def process()
-        # if @execution_list.empty?
-        #   notify_of_error("Execution list is not provided or empty, Action Worker has nothing to run!")
-        #   return
-        # end
+        if @execution_list.empty?
+          notify_of_error("Execution list is not provided or empty, Action Worker has nothing to run!")
+          return
+        end
 
-        # # start commander runnes
-        # @commander.run()
+        # start commander runnes
+        @commander.run()
 
-        # results = @commander.results()
-        results = [{:name => 'radi'}, {:name => 'radi2'}, {:name => 'radi3'}]
+        results = @commander.results()
         notify(results)
       end
 
