@@ -31,14 +31,14 @@ module Arbiter
         @command_tasks.each do |command_task|
 
           if command_task.callback_pending? && !command_task.run_condition_task
-            # Log.info("Skipping command task #{command_task}, conditions have not been met")
+            Log.info("Skipping command task #{command_task}, conditions have not been met")
             next
           end
 
           command_task.start_task
           loop do
             if command_task.exited?
-              # Log.debug("Command '#{command_task}' finished, with status #{command_task.exitstatus}")
+              Log.debug("Command '#{command_task}' finished, with status #{command_task.exitstatus}")
 
               # exit if there is an error
               return nil if (command_task.exitstatus.to_i > 0)
@@ -55,7 +55,7 @@ module Arbiter
       def parallel_run
         @command_tasks.each do |command_task|
           if command_task.callback_pending? && !command_task.run_condition_task
-            # Log.info("Skipping command task #{command_task}, conditions have not been met")
+            Log.info("Skipping command task #{command_task}, conditions have not been met")
             next
           end
           command_task.start_task
@@ -70,7 +70,7 @@ module Arbiter
           @command_tasks.each do |command_task|
             # is task finished
             if command_task.exited?
-              # Log.debug("Command '#{command_task}' finished, with status #{command_task.exitstatus}")
+              Log.debug("Command '#{command_task}' finished, with status #{command_task.exitstatus}")
             else
               # we are not ready yet, some tasks need to finish
               all_finished = false
@@ -102,7 +102,7 @@ module Arbiter
         return unless env_vars_hash
         env_vars_hash.keys.each do |k|
           ENV.delete(k)
-          # Log.debug("Environment variable cleared (#{k})")
+          Log.debug("Environment variable cleared (#{k})")
         end
       end
 
@@ -112,7 +112,7 @@ module Arbiter
         return unless env_vars_hash
         env_vars_hash.each do |k, v|
           ENV[k] = v.to_s.strip
-          # Log.debug("Environment variable set (#{k}: #{v})")
+          Log.debug("Environment variable set (#{k}: #{v})")
         end
       end
 

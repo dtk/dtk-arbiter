@@ -10,6 +10,7 @@ require 'optparse'
 require File.expand_path('lib/listener', File.dirname(__FILE__))
 require File.expand_path('lib/utils/facts', File.dirname(__FILE__))
 require File.expand_path('lib/utils/config', File.dirname(__FILE__))
+require File.expand_path('lib/common/logger', File.dirname(__FILE__))
 
 # Parsing OPTIONS
 options = {}
@@ -43,10 +44,14 @@ if options[:development]
   Dotenv.load
 end
 
-EM.run {
-  Signal.trap('INT') { EM.stop }
-  Signal.trap('TERM'){ EM.stop }
+begin
+  EM.run {
+    Signal.trap('INT') { EM.stop }
+    Signal.trap('TERM'){ EM.stop }
 
-  EM.connect Arbiter::Utils::Config.stomp_url, Arbiter::Utils::Config.stomp_port, Arbiter::Listener
-  puts "Arbiter listener has been successfully started. Listening to #{Arbiter::Utils::Config.full_url} ..."
-}
+    EM.connect Arbiter::Utils::Config.stomp_url, Arbiter::Utils::Config.stomp_port, Arbiter::Listener
+    puts "Arbiter listener has been successfully started. Listening to #{Arbiter::Utils::Config.full_url} ..."
+  }
+rescue Exception => e
+  Arbiter::Log.fatal(e.message, e.backtrace)
+end

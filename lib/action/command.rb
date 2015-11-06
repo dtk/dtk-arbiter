@@ -26,10 +26,6 @@ module Arbiter
       STREAM_TIMEOUT  = 5
 
       def initialize(value_hash)
-        # DEBUG SNIPPET >>> REMOVE <<<
-        require 'ap'
-        ap "VALUE HASH"
-        ap value_hash
         @command_type    = value_hash[:type]
         @command         = value_hash[:command]
         @stdout_redirect = !!value_hash[:stdout_redirect]
@@ -53,10 +49,6 @@ module Arbiter
         begin
 
           Commander.set_environment_variables(@env_vars)
-
-          # DEBUG SNIPPET >>> REMOVE <<<
-          require 'ap'
-          ap self
 
           results = capture3_with_timeout(formulate_command)
 
@@ -177,12 +169,6 @@ module Arbiter
         wait_thr = nil
 
         begin
-          # DEBUG SNIPPET >>> REMOVE <<<
-          require 'ap'
-          ap "START HERE!!!!!"
-          ap opts
-          ap cmd
-          ap spawn_opts
           Timeout.timeout(opts[:timeout]) do
             result[:pid] = spawn(*cmd, spawn_opts)
             wait_thr = Process.detach(result[:pid])

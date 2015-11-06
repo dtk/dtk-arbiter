@@ -22,11 +22,10 @@ module Arbiter
           return
         end
 
-        # start commander runnes
+        # start commander runs
         @commander.run()
 
-        results = @commander.results()
-        notify(results)
+        notify(@commander.results())
       end
 
     end
