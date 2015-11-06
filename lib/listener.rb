@@ -54,8 +54,6 @@ module Arbiter
           # register thread for cancel
           @thread_pool[original_message[:request_id]] = Thread.current
 
-          # start work
-          sleep(100)
           target_instance.process()
         end)
       end
