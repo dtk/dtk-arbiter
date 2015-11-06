@@ -3,7 +3,6 @@ require 'bundler'
 Bundler.setup
 
 require 'eventmachine'
-require 'dotenv'
 require 'daemons'
 require 'optparse'
 
@@ -41,6 +40,7 @@ end
 
 # DEVELOPMENT only
 if options[:development]
+  require 'dotenv'
   Dotenv.load
 end
 
@@ -54,4 +54,5 @@ begin
   }
 rescue Exception => e
   Arbiter::Log.fatal(e.message, e.backtrace)
+  exit(1)
 end

@@ -4,7 +4,6 @@ require 'yaml'
 
 require File.expand_path('../common/worker', __FILE__)
 
-
 Dir["lib/workers/*.rb"].each do |file_path|
   require File.expand_path("../../#{file_path}", __FILE__)
 end
@@ -53,7 +52,6 @@ module Arbiter
         EM.defer(proc do
           # register thread for cancel
           @thread_pool[original_message[:request_id]] = Thread.current
-
           target_instance.process()
         end)
       end
