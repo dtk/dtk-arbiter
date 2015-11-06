@@ -15,6 +15,7 @@ GEM
     eventmachine (1.0.8)
     git (1.2.9.1)
     json (1.8.2)
+    parseconfig (1.0.6)
 
 PLATFORMS
   ruby
@@ -28,6 +29,7 @@ DEPENDENCIES
   eventmachine
   git (= 1.2.9.1)
   json (= 1.8.2)
+  parseconfig
 
 BUNDLED WITH
    1.10.6
