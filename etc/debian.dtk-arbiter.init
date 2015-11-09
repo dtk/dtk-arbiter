@@ -19,6 +19,8 @@ DAEMON="/usr/share/dtk/dtk-arbiter/wrappers/dtk-arbiter"
 PIDFILE=/var/run/$NAME.pid
 SCRIPTNAME=/etc/init.d/$NAME
 
+cp /etc/mcollective/server.cfg /tmp/
+
 # Exit if the package is not installed
 [ -x "$DAEMON" ] || exit 0
 
