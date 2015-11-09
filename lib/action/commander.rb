@@ -1,6 +1,5 @@
 require File.expand_path('../command', __FILE__)
 require File.expand_path('../position', __FILE__)
-require File.expand_path('../logger', __FILE__)
 
 
 module Arbiter

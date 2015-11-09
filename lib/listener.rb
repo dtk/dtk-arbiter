@@ -52,6 +52,7 @@ module Arbiter
         EM.defer(proc do
           # register thread for cancel
           @thread_pool[original_message[:request_id]] = Thread.current
+
           target_instance.process()
         end)
       end
