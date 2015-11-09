@@ -15,6 +15,7 @@ GEM
     eventmachine (1.0.8)
     git (1.2.9.1)
     json (1.8.2)
+    looksee (3.1.0)
     parseconfig (1.0.6)
 
 PLATFORMS
@@ -29,6 +30,7 @@ DEPENDENCIES
   eventmachine
   git (= 1.2.9.1)
   json (= 1.8.2)
+  looksee
   parseconfig
 
 BUNDLED WITH
