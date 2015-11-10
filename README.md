@@ -7,7 +7,7 @@
 
 ###### System
 
-DTK Arbiter is ruby process which uses EventMachine for continus running, transforming it into system service would be recommended.
+DTK Arbiter is ruby process which uses EventMachine for continus running. It can be run either in foreground or using the provided init scripts.
 
 ###### Ruby
 
@@ -25,7 +25,7 @@ After cloning project from github make sure you run following command
 
 ##### Environment
 
-Arbiter uses dotenv gem to setup environment. File named `.env` has not been commited due to obvious security implications. Following are environment variables needed to start DTK Arbiter.
+Arbiter uses dotenv gem to setup environment in development mode. File named `.env` has not been commited due to obvious security implications. Following are environment variables needed to start DTK Arbiter.
 
     STOMP_HOST=
     STOMP_PORT=
@@ -35,6 +35,8 @@ Arbiter uses dotenv gem to setup environment. File named `.env` has not been com
     OUTBOX_TOPIC=mcollective.dtk
 
 This would be template for `.env` file needed in DTK Arbiter folder.
+
+If available, it can also read the MCollective server configuration file (`/etc/mcollective/server.cfg`).
 
 ### Run
 
