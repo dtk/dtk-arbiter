@@ -13,7 +13,7 @@ module Arbiter
 
     self.singleton_class.extend AfterDo
 
-    LOG_TO_CONSOLE = true
+    LOG_TO_CONSOLE = false
     LOG_TO_FILE    = '/var/log/dtk-arbiter.log'
     LOGS_DIR       = '/var/log/dtk/action-agent'
 
