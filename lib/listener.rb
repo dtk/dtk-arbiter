@@ -30,6 +30,12 @@ module Arbiter
         # decode message
         original_message = decode64(msg.body)
 
+        # check pbuilder id
+        unless Arbiter::PBUILDER_ID.eql?(original_message[:pbuilderid])
+          Log.debug "Discarding message pbuilder '#{original_message[:pbuilderid]}', not ment for this consumer '#{Arbiter::PBUILDER_ID}'"
+          return
+        end
+
         # determine the worker to handle payload
         Log.debug "Received message: #{original_message}"
         target_instance = worker_factory(original_message)
