@@ -2,7 +2,7 @@ require 'eventmachine'
 require 'base64'
 require 'yaml'
 
-require File.expand_path('lib/common/logger', File.dirname(__FILE__))
+require File.expand_path('../common/logger', __FILE__)
 require File.expand_path('../common/worker', __FILE__)
 
 Dir["lib/workers/*.rb"].each do |file_path|
