@@ -2,6 +2,7 @@ require 'eventmachine'
 require 'base64'
 require 'yaml'
 
+require File.expand_path('lib/common/logger', File.dirname(__FILE__))
 require File.expand_path('../common/worker', __FILE__)
 
 Dir["lib/workers/*.rb"].each do |file_path|
@@ -56,10 +57,14 @@ module Arbiter
 
         # start new EM thread to handle this work
         EM.defer(proc do
-          # register thread for cancel
-          @thread_pool[original_message[:request_id]] = Thread.current
+          begin
+            # register thread for cancel
+            @thread_pool[original_message[:request_id]] = Thread.current
 
-          target_instance.process()
+            target_instance.process()
+          rescue Exception => e
+            Log.fatal(e.message, e.backtrace)
+          end
         end)
       end
     end

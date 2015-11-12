@@ -9,7 +9,6 @@ require 'optparse'
 require File.expand_path('lib/listener', File.dirname(__FILE__))
 require File.expand_path('lib/utils/facts', File.dirname(__FILE__))
 require File.expand_path('lib/utils/config', File.dirname(__FILE__))
-require File.expand_path('lib/common/logger', File.dirname(__FILE__))
 
 # Parsing OPTIONS
 options = {}
@@ -53,6 +52,6 @@ begin
     puts "Arbiter listener has been successfully started. Listening to #{Arbiter::Utils::Config.full_url} ..."
   }
 rescue Exception => e
-  Arbiter::Log.fatal(e.message, e.backtrace)
+  put "FATAL: #{e.message}"
   exit(1)
 end

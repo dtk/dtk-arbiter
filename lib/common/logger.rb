@@ -18,7 +18,7 @@ module Arbiter
     LOGS_DIR       = '/var/log/dtk/action-agent'
 
     def initialize
-      @logger = Logger.new(File.new(LOG_TO_FILE,'a'))
+      @logger = Logger.new(File.new(LOG_TO_FILE,'a+'))
       @all_msgs   =[]
       @error_msgs =[]
 
