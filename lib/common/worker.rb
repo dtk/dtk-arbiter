@@ -18,6 +18,7 @@ module Arbiter
 
       def notify(results)
         @listener.update(results, @request_id)
+        Log.log_results(message, results, @module_name, @action_name, @top_task_id, @task_id, self.class.to_s)
       end
 
       def notify_of_error(error_message)

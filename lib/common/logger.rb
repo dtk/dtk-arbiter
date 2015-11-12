@@ -14,11 +14,10 @@ module Arbiter
     self.singleton_class.extend AfterDo
 
     LOG_TO_CONSOLE = false
-    LOG_TO_FILE    = '/var/log/dtk-arbiter.log'
-    LOGS_DIR       = '/var/log/dtk/action-agent'
+    LOGS_DIR       = '/var/log/dtk/arbiter-messages'
 
     def initialize
-      @logger = Logger.new(File.new(LOG_TO_FILE,'a+'))
+      @logger = Logger.new(STDOUT)
       @all_msgs   =[]
       @error_msgs =[]
 
@@ -31,33 +30,28 @@ module Arbiter
 
     def self.debug(msg)
       self.instance.logger.debug(msg)
-      puts "debug: #{msg}" if LOG_TO_CONSOLE
     end
 
     def self.info(msg)
       self.instance.logger.info(msg)
-      puts "info: #{msg}" if LOG_TO_CONSOLE
     end
 
     def self.warn(msg, backtrace = nil)
       self.instance.logger.warn(msg)
-      puts "warn: #{msg}" if LOG_TO_CONSOLE
       self.instance.error_msgs <<  { :message => msg, :backtrace => backtrace }
     end
 
     def self.error(msg, backtrace = nil)
       self.instance.logger.error(msg)
-      puts "error: #{msg}" if LOG_TO_CONSOLE
       self.instance.error_msgs << { :message => msg, :backtrace => backtrace }
     end
 
     def self.fatal(msg, backtrace)
       self.instance.logger.fatal(msg)
       self.instance.logger.fatal(backtrace)
-      puts "FATAL: #{msg}, check log for backtrace." if LOG_TO_CONSOLE
     end
 
-    def self.log_results(params_in, results, component_name, action_name, top_task_id, task_id)
+    def self.log_results(params_in, results, component_name, action_name, top_task_id, task_id, worker_name)
       component_dir = File.join(LOGS_DIR, "#{component_name}_#{top_task_id}")
       FileUtils.mkdir_p(component_dir) unless File.directory?(component_dir)
 
@@ -66,7 +60,7 @@ module Arbiter
         file.puts('Input data: ')
         file.puts JSON.pretty_generate(params_in)
         file.puts self.instance.all_msgs.join("\n")
-        file.puts('Results: ')
+        file.puts("Handled by #{worker_name} with results: ")
         file.puts JSON.pretty_generate(results)
       end
     end

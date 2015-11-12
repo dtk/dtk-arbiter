@@ -20,8 +20,6 @@ module Arbiter
         @stomp_password = ENV['STOMP_PASSWORD'] || retrieve_config('plugin.stomp.password', config)
         @inbox_topic = ENV['INBOX_TOPIC'] || '/topic/arbiter.dtk'
         @outbox_topic = ENV['OUTBOX_TOPIC'] || '/topic/arbiter.dtk.reply'
-
-        Log.debug "Configuration set to: #{config_hash}"
       end
 
       def retrieve_config(key, config)

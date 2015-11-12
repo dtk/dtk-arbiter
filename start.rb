@@ -33,7 +33,7 @@ Arbiter::PBUILDER_ID = facts['pbuilderid']
 
 # DAEMONIZE
 if options[:daemonize]
-  Daemons.daemonize(app_name: 'dtk-arbiter')
+  Daemons.daemonize(app_name: 'dtk-arbiter', log_dir: '/var/log/dtk', log_output: true)
   File.open(options[:pid] || '/var/run/dtk-arbiter.pid', 'w') { |f| f.puts(Process.pid) }
 end
 
@@ -52,6 +52,6 @@ begin
     puts "Arbiter listener has been successfully started. Listening to #{Arbiter::Utils::Config.full_url} ..."
   }
 rescue Exception => e
-  put "FATAL: #{e.message}"
+  puts "FATAL: #{e.message}"
   exit(1)
 end
