@@ -1,9 +1,11 @@
 require 'eventmachine'
 require 'base64'
 require 'yaml'
+require 'openssl'
 
 require File.expand_path('../common/logger', __FILE__)
 require File.expand_path('../common/worker', __FILE__)
+require File.expand_path('../utils/ssh_cipher', __FILE__)
 
 Dir["lib/workers/*.rb"].each do |file_path|
   require File.expand_path("../../#{file_path}", __FILE__)
@@ -28,8 +30,10 @@ module Arbiter
         Log.fatal "Not able to connect to STOMP, reason: #{msg.header['message']}. Stopping listener now ..."
         exit(1)
       else
+        # DEBUG SNIPPET >>> REMOVE <<<
+        require (RUBY_VERSION.match(/1\.8\..*/) ? 'ruby-debug' : 'debugger');Debugger.start; debugger
         # decode message
-        original_message = decode64(msg.body)
+        original_message = decode(msg.body)
 
         # check pbuilder id
         unless Arbiter::PBUILDER_ID.eql?(original_message[:pbuilderid])
@@ -86,14 +90,15 @@ module Arbiter
       @thread_pool.delete(request_id)
 
       Log.debug("Sending reply to '#{Utils::Config.outbox_topic}': #{message}")
-      send(Utils::Config.outbox_topic, encode64(message))
+      send(Utils::Config.outbox_topic, encode(message))
     end
 
 
   private
 
-    def encode64(message)
-      Base64.encode64(message.to_yaml)
+    def encode(message)
+      encrypted_message, ekey, esecret = Utils::SSHCipher.encrypt_sensitive(message)
+      Marshal.dump({ :payload => encrypted_message, :ekey => ekey, :esecret => esecret })
     end
 
     def cancel_worker(request_id)
@@ -101,9 +106,11 @@ module Arbiter
       @thread_pool.delete(request_id)
     end
 
-    def decode64(message)
-      decoded_message = Base64.decode64(message)
-      YAML.load(decoded_message)
+    def decode(message)
+      encrypted_message = Marshal.load(message)
+
+      decoded_message = Utils::SSHCipher.decrypt_sensitive(encrypted_message[:payload], encrypted_message[:ekey], encrypted_message[:esecret])
+      decoded_message
     end
 
     def worker_factory(message)
