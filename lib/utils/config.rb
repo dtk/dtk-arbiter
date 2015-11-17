@@ -5,7 +5,7 @@ module Arbiter
   module Utils
     class Config
 
-      DEFAULT_MC_FILE = '/etc/mcollective/server.cfg'
+      DEFAULT_MC_FILE = '/etc/dtk-arbiter.cfg'
 
       include Singleton
 
@@ -14,11 +14,11 @@ module Arbiter
       def initialize
         config = load_mcollective_configuration
 
-        @stomp_url  = ENV['STOMP_URL'] || retrieve_config('plugin.stomp.host', config)
-        @stomp_port = ENV['STOMP_PORT'] || retrieve_config('plugin.stomp.port', config)
-        @stomp_username = ENV['STOMP_USERNAME'] || retrieve_config('plugin.stomp.user', config)
-        @stomp_password = ENV['STOMP_PASSWORD'] || retrieve_config('plugin.stomp.password', config)
-        @arbiter_topic = retrieve_config('arbiter.topic', config)
+        @stomp_url  = ENV['STOMP_URL'] || retrieve_config('stomp_url', config)
+        @stomp_port = ENV['STOMP_PORT'] || retrieve_config('stomp_port', config)
+        @stomp_username = ENV['STOMP_USERNAME'] || retrieve_config('stomp_username', config)
+        @stomp_password = ENV['STOMP_PASSWORD'] || retrieve_config('stomp_password', config)
+        @arbiter_topic = retrieve_config('arbiter_topic', config)
         @inbox_topic = ENV['INBOX_TOPIC'] || "/topic/#{@arbiter_topic}.dtk"
         @outbox_topic = ENV['OUTBOX_TOPIC'] || "/topic/#{@arbiter_topic}.dtk.reply"
         @private_key = '/etc/mcollective/ssh/mcollective'
