@@ -3,7 +3,6 @@ require 'base64'
 require 'yaml'
 require 'openssl'
 
-require File.expand_path('../common/logger', __FILE__)
 require File.expand_path('../common/worker', __FILE__)
 require File.expand_path('../utils/ssh_cipher', __FILE__)
 
