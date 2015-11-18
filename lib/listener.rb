@@ -26,7 +26,7 @@ module Arbiter
         Log.debug "Connected to STOMP and subscribed to topic '#{Utils::Config.inbox_topic}'"
       elsif "ERROR".eql?(msg.command)
         # error connecting to stomp
-        Log.fatal "Not able to connect to STOMP, reason: #{msg.header['message']}. Stopping listener now ..."
+        Log.fatal("Not able to connect to STOMP, reason: #{msg.header['message']}. Stopping listener now ...", nil)
         exit(1)
       else
         # DEBUG SNIPPET >>> REMOVE <<<
