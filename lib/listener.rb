@@ -94,8 +94,8 @@ module Arbiter
   private
 
     def check_pbuilderid?(pbuilderid)
-      # this will work on regexp string and regular strings
-      regexp = Regexp.compile(pbuilderid)
+      # this will work on regexp string and regular strings - older version of Regexp does not handle extra // that well
+      regexp = Regexp.compile(pbuilderid.gsub(/[\/]/,''))
       !regexp.match(Arbiter::PBUILDER_ID).nil?
     end
 
