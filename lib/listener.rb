@@ -33,7 +33,7 @@ module Arbiter
         original_message = decode(msg.body)
 
         # check pbuilder id
-        unless Arbiter::PBUILDER_ID.eql?(original_message[:pbuilderid])
+        unless check_pbuilderid?(original_message[:pbuilderid])
           Log.debug "Discarding message pbuilder '#{original_message[:pbuilderid]}', not ment for this consumer '#{Arbiter::PBUILDER_ID}'"
           return
         end
@@ -92,6 +92,12 @@ module Arbiter
 
 
   private
+
+    def check_pbuilderid?(pbuilderid)
+      # this will work on regexp string and regular strings
+      regexp = Regexp.compile(pbuilderid)
+      !regexp.match(Arbiter::PBUILDER_ID).nil?
+    end
 
     def encode(message)
       encrypted_message, ekey, esecret = Utils::SSHCipher.encrypt_sensitive(message)
