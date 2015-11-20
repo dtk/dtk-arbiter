@@ -35,7 +35,10 @@ Arbiter::PBUILDER_ID = facts['pbuilderid']
 
 # DAEMONIZE
 if options[:daemonize]
+  Arbiter::Log.debug "Daemonizing arbiter"
   Daemons.daemonize(app_name: 'dtk-arbiter', log_dir: '/var/log/dtk', log_output: true)
+  Arbiter::Log.debug "Daemonizing succesful"
+  Arbiter::Log.debug "Writing pid file..."
   File.open(options[:pid] || '/var/run/dtk-arbiter.pid', 'w') { |f| f.puts(Process.pid) }
 end
 
@@ -50,8 +53,11 @@ begin
     Signal.trap('INT') { EM.stop }
     Signal.trap('TERM'){ EM.stop }
 
+    Arbiter::Log.debug "Starting EventMachine reactor"
+
     EM.connect Arbiter::Utils::Config.stomp_url, Arbiter::Utils::Config.stomp_port, Arbiter::Listener
     puts "Arbiter listener has been successfully started. Listening to #{Arbiter::Utils::Config.full_url} ..."
+    Arbiter::Log.debug "Arbiter listener has been successfully started. Listening to #{Arbiter::Utils::Config.full_url} ..."
   }
 rescue Exception => e
   Arbiter::Log.fatal(e.message, e.backtrace)

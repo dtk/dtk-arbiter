@@ -4,6 +4,7 @@ require 'yaml'
 require 'openssl'
 
 require File.expand_path('../common/worker', __FILE__)
+require File.expand_path('../common/logger', __FILE__)
 require File.expand_path('../utils/ssh_cipher', __FILE__)
 
 Dir["lib/workers/*.rb"].each do |file_path|
@@ -14,12 +15,16 @@ module Arbiter
   module Listener
     include EM::Protocols::Stomp
 
+    Log.debug "Initiliazing arbiter"
+
     def connection_completed
       connect :login => Utils::Config.stomp_username, :passcode => Utils::Config.stomp_password
       @thread_pool = {}
+      Log.debug "connection completed"
     end
 
     def receive_msg msg
+      Log.debug "Trying to receive_msg"
       if "CONNECTED".eql?(msg.command)
         # success connecting to stomp
         subscribe(Utils::Config.inbox_topic)
@@ -30,9 +35,11 @@ module Arbiter
         exit(1)
       else
         # decode message
+        Log.debug "Decoding message"
         original_message = decode(msg.body)
 
         # check pbuilder id
+        Log.debug "Checking message for pbuilderid"
         unless check_pbuilderid?(original_message[:pbuilderid])
           Log.debug "Discarding message pbuilder '#{original_message[:pbuilderid]}', not ment for this consumer '#{Arbiter::PBUILDER_ID}'"
           return
