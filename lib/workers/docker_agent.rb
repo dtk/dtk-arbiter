@@ -15,15 +15,16 @@ module Arbiter
 
         @process_pool = []
         @execution_list = @received_message[:execution_list] || []
+        @docker_image = @received_message[:docker_image]
+        @docker_command = @received_message[:docker_command]
+        @commander = Docker::Commander.new(@docker_image, @docker_command)
 
-        #image_id = @received_message[:image_id]
-        #@image = Docker::Image.create('fromImage' => 'nginx')
-        @image = Docker::Image.create('fromImage' => 'getdtk/trusty-puppet:latest')
+        #@image = Docker::Image.create('fromImage' => @docker_image )
       end
 
       def process()
         if @execution_list.empty?
-          notify_of_error("Execution list is not provided or empty, Action Worker has nothing to run!")
+          notify_of_error("Execution list is not provided or empty, Docker Worker has nothing to run!")
           return
         end
 
