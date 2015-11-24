@@ -6,8 +6,8 @@ module Arbiter
     Class Commander
 
       def initialize(docker_image, docker_command)
-        unless Docker::Image.exist?(image_id)
-          Docker::Image.create('fromImage' => image_id)
+        unless Docker::Image.exist?(docker_image)
+          Docker::Image.create('fromImage' => docker_image)
         end
         @docker_image = docker_image
         @docker_command = docker_command
