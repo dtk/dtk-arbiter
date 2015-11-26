@@ -7,6 +7,7 @@ gem 'json', '1.8.2'
 gem 'git', '1.2.9.1'
 gem 'daemons'
 gem 'parseconfig'
+gem 'docker-api'
 
 group :development do
   gem 'dotenv'
