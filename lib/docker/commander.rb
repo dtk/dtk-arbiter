@@ -38,9 +38,11 @@ module Arbiter
         #docker_run_output = `docker run -v #{output_dir}:#{output_dir_container} #{image_id} #{command}`
         @docker_run_stdout = nil
         @docker_run_stderr = nil
+        @exit_status = nil
         Open3.popen3(docker_cli_cmd) do |stdin, stdout, stderr, wait_thr|
           @docker_run_stdout = stdout.read
           @docker_run_stderr = stderr.read
+          @exit_status = wait_thr.value
         end
         begin
           docker_puppet_report = Hash.new
@@ -53,6 +55,7 @@ module Arbiter
         report[:puppet_report] = docker_puppet_report
         report[:stdout] = @docker_run_stdout
         report[:stderr] = @docker_run_stderr
+        report[:exit_status] = @exit_status
         report
       end
 
