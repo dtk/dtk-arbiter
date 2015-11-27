@@ -22,7 +22,7 @@ module Arbiter
       end
 
       def notify_of_error(error_message)
-        @listener.update(errors: [error_message], time: Time.now.to_s)
+        @listener.update([{ error: error_message, time: Time.now.to_s }], @request_id, true)
       end
 
       def to_s

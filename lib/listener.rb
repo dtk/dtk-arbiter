@@ -77,7 +77,7 @@ module Arbiter
       end
     end
 
-    def update(results, request_id)
+    def update(results, request_id, error_response = false)
       raise "Request_id is mandatory param" unless request_id
 
       message = {
@@ -85,8 +85,8 @@ module Arbiter
           data: { results: results },
           request_id: request_id,
           pbuilderid: Arbiter::PBUILDER_ID,
-          status: :ok,
-          statuscode: 0
+          status: error_response ? :notok : :ok,
+          statuscode: error_response ? 1 : 0
         }
       }
 
