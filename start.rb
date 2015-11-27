@@ -56,8 +56,7 @@ begin
     Arbiter::Log.debug "Starting EventMachine reactor"
 
     EM.connect Arbiter::Utils::Config.stomp_url, Arbiter::Utils::Config.stomp_port, Arbiter::Listener
-    puts "Arbiter listener has been successfully started. Listening to #{Arbiter::Utils::Config.full_url} ..."
-    Arbiter::Log.debug "Arbiter listener has been successfully started. Listening to #{Arbiter::Utils::Config.full_url} ..."
+    Arbiter::Log.info "Arbiter listener has been successfully started. Listening to #{Arbiter::Utils::Config.full_url} ..."
   }
 rescue Exception => e
   Arbiter::Log.fatal(e.message, e.backtrace)
