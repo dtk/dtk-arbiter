@@ -5,6 +5,7 @@ require 'openssl'
 
 require File.expand_path('../common/worker', __FILE__)
 require File.expand_path('../common/logger', __FILE__)
+require File.expand_path('../common/error', __FILE__)
 require File.expand_path('../utils/ssh_cipher', __FILE__)
 
 Dir["lib/workers/*.rb"].each do |file_path|
@@ -77,18 +78,22 @@ module Arbiter
       end
     end
 
-    def update(results, request_id, error_response = false)
-      raise "Request_id is mandatory param" unless request_id
+    def update(results, request_id, error_response = falsem)
+      raise "Param request_id is mandatory" unless request_id
+      statuscode = error_response ? 1 : 0
 
       message = {
+        requestid: request_id,
         body: {
-          data: { results: results },
           request_id: request_id,
-          pbuilderid: Arbiter::PBUILDER_ID,
-          status: error_response ? :notok : :ok,
-          statuscode: error_response ? 1 : 0
+          statuscode: statuscode,
+          data: {
+            data: results,
+            pbuilderid: Arbiter::PBUILDER_ID,
+            statuscode: statuscode
+            }
+          }
         }
-      }
 
       # remove from thread pull
       @thread_pool.delete(request_id)
@@ -96,7 +101,6 @@ module Arbiter
       Log.debug("Sending reply to '#{Utils::Config.outbox_topic}': #{message}")
       send(Utils::Config.outbox_topic, encode(message))
     end
-
 
   private
 
@@ -128,7 +132,9 @@ module Arbiter
 
       return case target_agent
         when 'action_agent'
-          ::Arbiter::Action::AgentWorker.new(message, self)
+          ::Arbiter::Action::Worker.new(message, self)
+        when 'system_agent'
+          ::Arbiter::System::Worker.new(message, self)
         when 'cancel_agent'
           Log.info "Sending cancel signal to worker for request (ID: '#{request_id}')"
           cancel_agent(message[:request_id])

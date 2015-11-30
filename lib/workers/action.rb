@@ -4,7 +4,7 @@ Dir[File.dirname(__FILE__) + '../action/*.rb'].each { |file| require file }
 
 module Arbiter
   module Action
-    class AgentWorker < Common::Worker
+    class Worker < Common::Worker
 
       attr_reader :process_pool
 

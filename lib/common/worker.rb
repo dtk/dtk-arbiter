@@ -8,7 +8,7 @@ module Arbiter
         @top_task_id = @received_message[:top_task_id]
         @task_id     = @received_message[:task_id]
         @module_name = @received_message[:module_name]
-        @action_name = @received_message[:action_name]
+        @action_name = @received_message[:method]
         @request_id  = @received_message[:request_id]
       end
 
@@ -17,7 +17,7 @@ module Arbiter
       end
 
       def notify(results)
-        @listener.update(results, @request_id)
+        @listener.update(results, @request_id, false)
         Log.log_results(@received_message, results, @module_name, @action_name, @top_task_id, @task_id, self.class.to_s)
       end
 
@@ -27,6 +27,10 @@ module Arbiter
 
       def to_s
         "#{self.class}"
+      end
+
+      def action_name
+        @action_name ? @action_name.downcase.to_sym : nil
       end
 
     end
