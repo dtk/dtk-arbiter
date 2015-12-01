@@ -122,6 +122,8 @@ module Arbiter
       return case target_agent
         when 'action_agent'
           ::Arbiter::Action::AgentWorker.new(message, self)
+        when 'docker_agent'
+          ::Arbiter::Docker::DockerWorker.new(message, self)
         when 'cancel_agent'
           Log.info "Sending cancel signal to worker for request (ID: '#{request_id}')"
           cancel_agent(message[:request_id])
