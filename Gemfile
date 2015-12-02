@@ -8,6 +8,7 @@ gem 'git', '1.2.9.1'
 gem 'daemons'
 gem 'parseconfig'
 gem 'docker-api'
+gem 'grit'
 
 group :development do
   gem 'dotenv'
