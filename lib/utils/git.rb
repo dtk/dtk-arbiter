@@ -90,13 +90,13 @@ module Arbiter
       end
 
       def self.pull_module(repo_dir,branch,opts={})
-        git_repo = ::DTK::NodeAgent::GitClient.new(repo_dir)
+        git_repo = ::Arbiter::Common::GitClient.new(repo_dir)
         git_repo.pull_and_checkout_branch?(branch,opts)
       end
 
       def self.clean_and_clone_module(repo_dir,remote_repo,branch,opts={})
         FileUtils.rm_rf repo_dir if File.exists?(repo_dir)
-        git_repo = ::DTK::NodeAgent::GitClient.new(repo_dir,:create=>true)
+        git_repo = ::Arbiter::Common::GitClient.new(repo_dir,:create=>true)
         git_repo.clone_branch(remote_repo,branch,opts)
       end
 
