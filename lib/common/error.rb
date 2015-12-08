@@ -14,4 +14,10 @@ module Arbiter
 
     end
   end
+
+  # list of application throwable errors
+  class ArbiterError   < StandardError; end
+  class MissingParams  < ArbiterError;  end
+  class InvalidContent < ArbiterError;  end
+  class ActionAbort    < ArbiterError;  end
 end

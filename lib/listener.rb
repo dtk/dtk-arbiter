@@ -71,6 +71,8 @@ module Arbiter
             @thread_pool[original_message[:request_id]] = Thread.current
 
             target_instance.process()
+          rescue ArbiterError => e
+            target_instance.notify_of_error(e.message)
           rescue Exception => e
             Log.fatal(e.message, e.backtrace)
           end

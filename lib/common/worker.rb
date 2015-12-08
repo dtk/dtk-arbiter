@@ -33,6 +33,21 @@ module Arbiter
         @action_name ? @action_name.downcase.to_sym : nil
       end
 
+    protected
+
+      def get(identifier)
+        @received_message[identifier.to_sym]
+      end
+
+      def check_required!(*instance_variables)
+        errors = []
+        [*instance_variables].each do |iv|
+          errors << "Missing required parameter '#{iv}'" unless instance_variable_get("@#{vi}")
+        end
+
+        raise Arbiter::MissingParams, errors.join(', ') unless errors.empty?
+      end
+
     end
   end
 end

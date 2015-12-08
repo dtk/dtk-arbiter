@@ -1,5 +1,3 @@
-# Dir[File.dirname(__FILE__) + '../system/*.rb'].each { |file| require file }
-
 module Arbiter
   module System
     class Worker < Common::Worker
