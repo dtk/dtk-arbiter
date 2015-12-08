@@ -1,4 +1,5 @@
-require 'mcollective'
+require File.expand_path('../../utils/puppet_runner', __FILE__)
+
 
 module Arbiter
   module Secure
@@ -13,10 +14,6 @@ module Arbiter
       def process()
         return notify_of_error("System Worker needs action name to proceed, aborting processing!") unless action_name
         return notify_of_error(ErrorFormatter.action_not_defined(action_name, self)) unless self.respond_to?(action_name)
-
-        @agent_ssh_key_public = @received_message[:agent_ssh_key_public]
-        @agent_ssh_key_private = @received_message[:agent_ssh_key_private]
-        @server_ssh_rsa_fingerprint = @received_message[:server_ssh_rsa_fingerprint]
 
         results = self.send(action_name)
         notify(results)
@@ -34,15 +31,14 @@ module Arbiter
               :user => get(:system_user)
             }
 
-          ::MCollective::Util.loadclass("MCollective::Util::PuppetRunner")
-          ::MCollective::Util::PuppetRunner.apply(:ssh_authorized_key, puppet_params)
+          Utils::PuppetRunner.apply(:ssh_authorized_key, puppet_params)
 
           # There is a bug where we are expiriencing issues with above changes not taking effect for no apperent reason
           # if detected we repeat puppet apply
 
           unless key_added?(puppet_params[:user], puppet_params[:key])
             Log.info("Fallback, repeating SSH access grant")
-            ::MCollective::Util::PuppetRunner.apply(:ssh_authorized_key, puppet_params)
+            Utils::PuppetRunner.apply(:ssh_authorized_key, puppet_params)
           end
 
           raise ActionAbort, "We were not able to add SSH access for given node (PuppetError)" unless key_added?(puppet_params[:user], puppet_params[:key])
@@ -57,8 +53,7 @@ module Arbiter
         check_required!(:rsa_pub_name, :system_user)
 
         if does_user_exist?(get(:system_user))
-          ::MCollective::Util.loadclass("MCollective::Util::PuppetRunner")
-          ::MCollective::Util::PuppetRunner.apply(
+          Utils::PuppetRunner.apply(
             :ssh_authorized_key,
             {
               :name => get(:rsa_pub_name),

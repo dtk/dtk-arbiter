@@ -36,13 +36,13 @@ module Arbiter
     protected
 
       def get(identifier)
-        @received_message[identifier.to_sym]
+        instance_variable_get("@#{identifier}") || @received_message[identifier.to_sym]
       end
 
       def check_required!(*instance_variables)
         errors = []
         [*instance_variables].each do |iv|
-          errors << "Missing required parameter '#{iv}'" unless instance_variable_get("@#{iv}")
+          errors << "Missing required parameter '#{iv}'" unless (instance_variable_get("@#{iv}") || @received_message[iv])
         end
 
         raise Arbiter::MissingParams, errors.join(', ') unless errors.empty?
