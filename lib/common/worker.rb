@@ -8,7 +8,7 @@ module Arbiter
         @top_task_id = @received_message[:top_task_id]
         @task_id     = @received_message[:task_id]
         @module_name = @received_message[:module_name]
-        @action_name = @received_message[:method]
+        @action_name = @received_message[:method] ? @received_message[:method].to_sym : nil
         @request_id  = @received_message[:request_id]
       end
 
@@ -42,7 +42,7 @@ module Arbiter
       def check_required!(*instance_variables)
         errors = []
         [*instance_variables].each do |iv|
-          errors << "Missing required parameter '#{iv}'" unless instance_variable_get("@#{vi}")
+          errors << "Missing required parameter '#{iv}'" unless instance_variable_get("@#{iv}")
         end
 
         raise Arbiter::MissingParams, errors.join(', ') unless errors.empty?

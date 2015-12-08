@@ -27,11 +27,11 @@ module Arbiter
 
         if does_user_exist?(get(:system_user))
           puppet_params = {
-              :name => get(:rsa_pub_name)],
+              :name => get(:rsa_pub_name),
               :ensure => 'present',
-              :key => normalize_rsa_pub_key(get(:rsa_pub_key)]),
+              :key => normalize_rsa_pub_key(get(:rsa_pub_key)),
               :type => 'ssh-rsa',
-              :user => get(:system_user)]
+              :user => get(:system_user)
             }
 
           ::MCollective::Util.loadclass("MCollective::Util::PuppetRunner")
@@ -47,7 +47,7 @@ module Arbiter
 
           raise ActionAbort, "We were not able to add SSH access for given node (PuppetError)" unless key_added?(puppet_params[:user], puppet_params[:key])
 
-          { :message => "Access to system user '#{get[:system_user]}' has been granted for '#{get[:rsa_pub_name]}'"
+          { :message => "Access to system user '#{get[:system_user]}' has been granted for '#{get[:rsa_pub_name]}'" }
         else
           raise ActionAbort, "System user '#{get(:system_user)}' not found on given node"
         end
@@ -56,19 +56,19 @@ module Arbiter
       def revoke_access
         check_required!(:rsa_pub_name, :system_user)
 
-        if does_user_exist?(get(:system_user)])
+        if does_user_exist?(get(:system_user))
           ::MCollective::Util.loadclass("MCollective::Util::PuppetRunner")
           ::MCollective::Util::PuppetRunner.apply(
             :ssh_authorized_key,
             {
-              :name => get(:rsa_pub_name)],
+              :name => get(:rsa_pub_name),
               :ensure => 'absent',
               :type => 'ssh-rsa',
-              :user => get(:system_user)]
+              :user => get(:system_user)
            }
           )
 
-          { :message => "Access for system user '#{get(:system_user)]}' has been revoked" }
+          { :message => "Access for system user '#{get(:system_user)}' has been revoked" }
         else
           raise ActionAbort, "System user '#{get(:system_user)}' not found on given node"
         end
@@ -78,23 +78,24 @@ module Arbiter
       def add_rsa_info
         check_required!(:agent_ssh_key_public, :agent_ssh_key_private, :server_ssh_rsa_fingerprint)
 
-        ssh_folder_path = '/root/.ssh'
+        # ssh_folder_path = '/root/.ssh'
+        ssh_folder_path = '/home/ubuntu/test/'
         rsa_path     = "#{ssh_folder_path}/id_rsa"
         rsa_pub_path = "#{ssh_folder_path}/id_rsa.pub"
         known_hosts  = "#{ssh_folder_path}/known_hosts"
 
         # create private rsa file if needed
-        unless donot_create_file?(:private, rsa_path, request[:agent_ssh_key_private])
-          File.open(rsa_path, "w" , 0600){ |f| f.print request[:agent_ssh_key_private] }
+        unless donot_create_file?(:private, rsa_path, get(:agent_ssh_key_private))
+          File.open(rsa_path, "w" , 0600){ |f| f.print get(:agent_ssh_key_private) }
         end
 
         # create public rsa file if needed
-        unless donot_create_file?(:public, rsa_pub_path, request[:agent_ssh_key_public])
-          File.open(rsa_pub_path, "w"){ |f| f.print request[:agent_ssh_key_public] }
+        unless donot_create_file?(:public, rsa_pub_path, get(:agent_ssh_key_public))
+          File.open(rsa_pub_path, "w"){ |f| f.print get(:agent_ssh_key_public) }
         end
 
-        # add rsa_fingerprint to known hsots; server logic makes sure that is not requested twice so no duplicates
-        File.open(known_hosts, "a" ){ |f| f.print request[:server_ssh_rsa_fingerprint] }
+        # add rsa_fingerprint to known hsots; server logic makes sure that is not get added twice so no duplicates
+        File.open(known_hosts, "a" ){ |f| f.print get(:server_ssh_rsa_fingerprint) }
 
         { :status => :succeeded }
 
