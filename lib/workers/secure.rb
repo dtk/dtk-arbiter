@@ -90,11 +90,11 @@ module Arbiter
 
         # create public rsa file if needed
         unless donot_create_file?(:public, rsa_pub_path, request[:agent_ssh_key_public])
-          File.open(rsa_pub_path,"w"){ |f| f.print request[:agent_ssh_key_public] }
+          File.open(rsa_pub_path, "w"){ |f| f.print request[:agent_ssh_key_public] }
         end
 
         # add rsa_fingerprint to known hsots; server logic makes sure that is not requested twice so no duplicates
-        File.open(known_hosts,"a"){|f|f.print request[:server_ssh_rsa_fingerprint]}
+        File.open(known_hosts, "a" ){ |f| f.print request[:server_ssh_rsa_fingerprint] }
 
         { :status => :succeeded }
 
