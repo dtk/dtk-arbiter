@@ -10,6 +10,7 @@ module Arbiter
     class Worker < Common::Worker
 
       UNKNOWN_SERVICE = 'UNKNOWN'
+      NUMBER_OF_RETRIES = 5
 
       PUPPET_LOG_DIR      = "/var/log/puppet"
       MODULE_PATH         = "/etc/puppet/modules"
@@ -93,9 +94,7 @@ module Arbiter
 
             command_string = "#{cmd} apply #{file.path} --debug --modulepath /etc/puppet/modules"
 
-
-            stdout, stderr, status, result = capture3_with_timeout(command_string)
-            raise ActionAbort, "Not able to run puppet script #{stderr}" unless status.exitstatus == 0
+            stdout, stderr, status, result = PupppetRunner.execute_cmd_line(command_string)
           end
          rescue SystemExit => e
           if e.status == 0
@@ -145,14 +144,14 @@ module Arbiter
       end
 
       def pull_module(repo_dir, branch, opts={})
-        git_repo = Puppet::GitClient.new(repo_dir)
+        git_repo = Common::GitClient.new(repo_dir)
         git_repo.pull_and_checkout_branch?(branch,opts)
         true
       end
 
       def clean_and_clone_module(repo_dir,remote_repo,branch,opts={})
         FileUtils.rm_rf repo_dir if File.exists?(repo_dir)
-        git_repo = Puppet::GitClient.new(repo_dir, :create => true)
+        git_repo = Common::GitClient.new(repo_dir, :create => true)
         git_repo.clone_branch(remote_repo,branch,opts)
         true
       end
@@ -193,7 +192,7 @@ module Arbiter
 
             unless pull_success
               begin
-                tries ||= NUMBER_OF_RETRIES
+                tries ||= 5
                 clean_and_clone_module(puppet_repo_dir, remote_repo,vc[:branch], opts)
                rescue Exception => e
                 unless (tries -= 1).zero?

@@ -1,5 +1,3 @@
-require 'puppet'
-
 require File.expand_path('../../common/mixin/open3', __FILE__)
 
 
@@ -10,6 +8,17 @@ module Arbiter
       extend Open3
 
       PUPPET_RUNNABLE = '/usr/bin/puppet'
+
+      def self.execute_cmd_line(cmd_line)
+        Log.debug("Puppet Runner executing command line: '#{cmd_line}'")
+        stdout, stderr, status, result = capture3_with_timeout(command_string)
+
+        unless status.exitstatus == 0
+          raise ActionAbort, "Not able to execute puppet code, exitstatus: #{status.exitstatus}, error: #{stderr}"
+        end
+
+        [stdout, stderr, status, result]
+      end
 
       def self.execute(puppet_definition, resource_hash)
         # we need to create command string
