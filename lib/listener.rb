@@ -139,6 +139,10 @@ module Arbiter
           ::Arbiter::Action::Worker.new(message, self)
         when 'system_agent'
           ::Arbiter::System::Worker.new(message, self)
+        when 'discovery'
+          ::Arbiter::Discovery::Worker.new(message, self)
+        when 'puppet_apply'
+          ::Arbiter::Puppet::Worker.new(message, self)
         when 'cancel_agent'
           Log.info "Sending cancel signal to worker for request (ID: '#{request_id}')"
           cancel_agent(message[:request_id])

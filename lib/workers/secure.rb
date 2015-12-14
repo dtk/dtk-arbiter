@@ -5,6 +5,8 @@ module Arbiter
   module Secure
     class Worker < Common::Worker
 
+      SSH_AUTH_KEYS_FILE_NAME    = "authorized_keys"
+
       attr_reader :process_pool
 
       def initialize(message_content, listener)
@@ -31,19 +33,21 @@ module Arbiter
               :user => get(:system_user)
             }
 
-          Utils::PuppetRunner.apply(:ssh_authorized_key, puppet_params)
+
+
+          Utils::PuppetRunner.execute(:ssh_authorized_key, puppet_params)
 
           # There is a bug where we are expiriencing issues with above changes not taking effect for no apperent reason
           # if detected we repeat puppet apply
 
           unless key_added?(puppet_params[:user], puppet_params[:key])
             Log.info("Fallback, repeating SSH access grant")
-            Utils::PuppetRunner.apply(:ssh_authorized_key, puppet_params)
+            Utils::PuppetRunner.execute(:ssh_authorized_key, puppet_params)
           end
 
           raise ActionAbort, "We were not able to add SSH access for given node (PuppetError)" unless key_added?(puppet_params[:user], puppet_params[:key])
 
-          { :message => "Access to system user '#{get[:system_user]}' has been granted for '#{get[:rsa_pub_name]}'" }
+          { :message => "Access to system user '#{get(:system_user)}' has been granted for '#{get(:rsa_pub_name)}'" }
         else
           raise ActionAbort, "System user '#{get(:system_user)}' not found on given node"
         end
@@ -53,7 +57,7 @@ module Arbiter
         check_required!(:rsa_pub_name, :system_user)
 
         if does_user_exist?(get(:system_user))
-          Utils::PuppetRunner.apply(
+          Utils::PuppetRunner.execute(
             :ssh_authorized_key,
             {
               :name => get(:rsa_pub_name),

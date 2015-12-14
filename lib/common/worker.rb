@@ -39,6 +39,14 @@ module Arbiter
         instance_variable_get("@#{identifier}") || @received_message[identifier.to_sym]
       end
 
+      def top_task_id
+        get(:top_task_id)
+      end
+
+      def task_id
+        get(:task_id)
+      end
+
       def check_required!(*instance_variables)
         errors = []
         [*instance_variables].each do |iv|
