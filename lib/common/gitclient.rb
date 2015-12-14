@@ -1,6 +1,6 @@
 require 'grit'
 module Arbiter
-  module Puppet
+  module Common
     class GitClient
       def initialize(repo_dir,opts={})
         @repo_dir = repo_dir
@@ -91,4 +91,3 @@ module Arbiter
     end
   end
 end
-

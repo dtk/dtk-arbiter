@@ -51,4 +51,8 @@ From `dtk:/developer>` you can run:
     run-agent dock-test system_agent "{'module_name':'r8::stdlib','action_name':'get_ps','top_task_id':100000001,'task_id':100000002 }"
     run-agent dock-test action_agent "{'module_name':'r8::stdlib','action_name':'create','top_task_id':100000001,'task_id':100000002,'execution_list':[{'type':'syscall','command':'sleep 10; echo jao;','timeout':0,'stdout_redirect':true}]}"
 
+<<<<<<< HEAD
 Secure#add_rsa_info
+=======
+
+>>>>>>> b3bb5a80ffd107c2793393e45afe47845c6b294d

@@ -1,8 +1,7 @@
 require 'fileutils'
-require 'puppet'
 require 'tempfile'
 
-require File.expand_path('../../puppet/git_client', __FILE__)
+require File.expand_path('../../common/gitclient', __FILE__)
 require File.expand_path('../../common/mixin/open3', __FILE__)
 
 
