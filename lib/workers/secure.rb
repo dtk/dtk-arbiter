@@ -106,6 +106,10 @@ module Arbiter
         # raises exception if these files already exists and content differs
         if File.exists?(path)
           existing = File.open(path).read
+
+          # DEBUG SNIPPET >>> REMOVE <<<
+          require (RUBY_VERSION.match(/1\.8\..*/) ? 'ruby-debug' : 'debugger');Debugger.start; debugger
+
           if existing == content
             true
           else

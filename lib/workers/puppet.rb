@@ -3,7 +3,7 @@ require 'tempfile'
 
 require File.expand_path('../../common/gitclient', __FILE__)
 require File.expand_path('../../common/mixin/open3', __FILE__)
-
+require File.expand_path('../../utils/puppet_runner', __FILE__)
 
 module Arbiter
   module Puppet
@@ -54,21 +54,7 @@ module Arbiter
           puppet_version = "_#{puppet_version}_"
         end
 
-        # TODO: Haris will have to check this
-        # Amar: Added task ID to current thread, so puppet apply can be canceled from puppet_cancel.rb when user requests cancel
-        # task_id = request[:top_task_id]
-        # Thread.current[:task_id] = task_id
-        clean_threads_state()
-
-        ret = nil
-        runtime_errors = nil
-
         begin
-          save_stderr = nil
-          stderr_capture = nil
-
-          ::Puppet[:autoflush] = true
-
 
           # Amar: Node manifest contains list of generated puppet manifests
           #       This is done to support multiple puppet calls inside one puppet_apply agent call
@@ -94,7 +80,7 @@ module Arbiter
 
             command_string = "#{cmd} apply #{file.path} --debug --modulepath /etc/puppet/modules"
 
-            stdout, stderr, status, result = PupppetRunner.execute_cmd_line(command_string)
+            stdout, stderr, status, result = Utils::PuppetRunner.execute_cmd_line(command_string)
           end
          rescue SystemExit => e
           if e.status == 0
@@ -111,12 +97,6 @@ module Arbiter
       end
 
     private
-
-      def clean_threads_state()
-        [:exported_resources, :exported_variables, :report_status, :imported_collections].each do |k|
-          Thread.current[k] = nil if Thread.current.keys.include?(k)
-        end
-      end
 
       def exported_resources(cmp_name)
         (Thread.current[:exported_resources]||{})[cmp_name]

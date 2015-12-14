@@ -1,3 +1,5 @@
+require 'puppet'
+
 require File.expand_path('../../common/mixin/open3', __FILE__)
 
 
@@ -5,12 +7,14 @@ module Arbiter
   module Utils
     class PuppetRunner
 
-      extend Open3
+      extend ::Arbiter::Common::Open3
 
       PUPPET_RUNNABLE = '/usr/bin/puppet'
 
-      def self.execute_cmd_line(cmd_line)
-        Log.debug("Puppet Runner executing command line: '#{cmd_line}'")
+      def self.execute_cmd_line(command_string)
+        # DEBUG SNIPPET >>> REMOVE <<<
+        require (RUBY_VERSION.match(/1\.8\..*/) ? 'ruby-debug' : 'debugger');Debugger.start; debugger
+        Log.debug("Puppet Runner executing command line: '#{command_string}'")
         stdout, stderr, status, result = capture3_with_timeout(command_string)
 
         unless status.exitstatus == 0
