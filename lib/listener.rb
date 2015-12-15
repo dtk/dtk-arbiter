@@ -72,7 +72,7 @@ module Arbiter
 
             target_instance.process()
           rescue ArbiterError => e
-            target_instance.notify_of_error(e.message, e.message_type)
+            target_instance.notify_of_error(e.message, e.error_type)
           rescue Exception => e
             Log.fatal(e.message, e.backtrace)
           end
