@@ -77,8 +77,7 @@ module Arbiter
       def add_rsa_info
         check_required!(:agent_ssh_key_public, :agent_ssh_key_private, :server_ssh_rsa_fingerprint)
 
-        # ssh_folder_path = '/root/.ssh'
-        ssh_folder_path = '/home/ubuntu/test/'
+        ssh_folder_path = '/root/.ssh'
         rsa_path     = "#{ssh_folder_path}/id_rsa"
         rsa_pub_path = "#{ssh_folder_path}/id_rsa.pub"
         known_hosts  = "#{ssh_folder_path}/known_hosts"
