@@ -90,10 +90,10 @@ module Arbiter
         body: {
           request_id: request_id,
           statuscode: statuscode,
-          status: status
+          status: status,
           data: {
             data: results,
-            status: status
+            status: status,
             pbuilderid: Arbiter::PBUILDER_ID,
             statuscode: statuscode
             }
