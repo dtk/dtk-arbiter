@@ -5,9 +5,8 @@
 # Required-Stop:     $remote_fs $syslog
 # Default-Start:     3 4 5
 # Default-Stop:      0 1 6
-# Short-Description: DTK Arbiter
-# Description: DTK Arbiter is ruby process which uses EventMachine for 
-#              continus running.
+# Short-Description: DTK Arbiter initscript
+# Description:       DTK Arbiter initscript
 ### END INIT INFO
 
 # Source function library.
