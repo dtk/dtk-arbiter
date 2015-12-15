@@ -83,14 +83,17 @@ module Arbiter
     def update(results, request_id, error_response = false)
       raise "Param request_id is mandatory" unless request_id
       statuscode = error_response ? 1 : 0
+      status     = error_response ? :failed : :succeeded
 
       message = {
         requestid: request_id,
         body: {
           request_id: request_id,
           statuscode: statuscode,
+          status: status
           data: {
             data: results,
+            status: status
             pbuilderid: Arbiter::PBUILDER_ID,
             statuscode: statuscode
             }
