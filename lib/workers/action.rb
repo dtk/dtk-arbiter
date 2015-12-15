@@ -18,7 +18,7 @@ module Arbiter
 
       def process()
         if @execution_list.empty?
-          notify_of_error("Execution list is not provided or empty, Action Worker has nothing to run!")
+          notify_of_error("Execution list is not provided or empty, Action Worker has nothing to run!", :missing_params)
           return
         end
 

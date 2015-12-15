@@ -91,7 +91,7 @@ module Arbiter
               # all ok
             end
           else
-            return notify_of_error("Exit status aborting operation!")
+            return notify_of_error("Exit status aborting operation!", :abort_action)
           end
         end
       end

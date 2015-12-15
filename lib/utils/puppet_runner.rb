@@ -12,8 +12,6 @@ module Arbiter
       PUPPET_RUNNABLE = '/usr/bin/puppet'
 
       def self.execute_cmd_line(command_string)
-        # DEBUG SNIPPET >>> REMOVE <<<
-        require (RUBY_VERSION.match(/1\.8\..*/) ? 'ruby-debug' : 'debugger');Debugger.start; debugger
         Log.debug("Puppet Runner executing command line: '#{command_string}'")
         stdout, stderr, status, result = capture3_with_timeout(command_string)
 

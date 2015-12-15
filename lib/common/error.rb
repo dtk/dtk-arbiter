@@ -16,8 +16,11 @@ module Arbiter
   end
 
   # list of application throwable errors
-  class ArbiterError   < StandardError; end
-  class MissingParams  < ArbiterError;  end
-  class InvalidContent < ArbiterError;  end
-  class ActionAbort    < ArbiterError;  end
+  class ArbiterError   < StandardError
+    attr_reader :error_type
+  end
+
+  class MissingParams  < ArbiterError; def initialize(content); super(content); @error_type = :missing_params; end end
+  class InvalidContent < ArbiterError; def initialize(content); super(content); @error_type = :invalid_content; end end
+  class ActionAbort    < ArbiterError; def initialize(content); super(content); @error_type = :abort_action; end end
 end

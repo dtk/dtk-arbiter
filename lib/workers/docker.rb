@@ -13,7 +13,6 @@ module Arbiter
 
       def initialize(message_content, listener)
         super(message_content, listener)
-require 'debugger'; debugger
         @process_pool = []
         @execution_list = @received_message[:execution_list] || []
         @docker_image = @received_message[:docker_image]
@@ -24,11 +23,6 @@ require 'debugger'; debugger
       end
 
       def process()
-#        if @execution_list.empty?
-#          notify_of_error("Execution list is not provided or empty, Docker Worker has nothing to run!")
-#          return
-#        end
-
         # start commander runnes
         @commander.run()
 

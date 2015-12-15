@@ -14,8 +14,8 @@ module Arbiter
       end
 
       def process()
-        return notify_of_error("System Worker needs action name to proceed, aborting processing!") unless action_name
-        return notify_of_error(ErrorFormatter.action_not_defined(action_name, self)) unless self.respond_to?(action_name)
+        return notify_of_error("System Worker needs action name to proceed, aborting processing!", :missing_params) unless action_name
+        return notify_of_error(ErrorFormatter.action_not_defined(action_name, self), :missing_params) unless self.respond_to?(action_name)
 
         results = self.send(action_name)
         notify(results)
@@ -106,9 +106,6 @@ module Arbiter
         # raises exception if these files already exists and content differs
         if File.exists?(path)
           existing = File.open(path).read
-
-          # DEBUG SNIPPET >>> REMOVE <<<
-          require (RUBY_VERSION.match(/1\.8\..*/) ? 'ruby-debug' : 'debugger');Debugger.start; debugger
 
           if existing == content
             true

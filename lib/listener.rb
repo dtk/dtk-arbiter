@@ -72,7 +72,7 @@ module Arbiter
 
             target_instance.process()
           rescue ArbiterError => e
-            target_instance.notify_of_error(e.message)
+            target_instance.notify_of_error(e.message, e.message_type)
           rescue Exception => e
             Log.fatal(e.message, e.backtrace)
           end
@@ -80,7 +80,7 @@ module Arbiter
       end
     end
 
-    def update(results, request_id, error_response = falsem)
+    def update(results, request_id, error_response = false)
       raise "Param request_id is mandatory" unless request_id
       statuscode = error_response ? 1 : 0
 
@@ -97,6 +97,8 @@ module Arbiter
           }
         }
 
+      mesage[:body].merge!(retrieve_error_info(results)) if error_response
+
       # remove from thread pull
       @thread_pool.delete(request_id)
 
@@ -105,6 +107,17 @@ module Arbiter
     end
 
   private
+
+    ##
+    # This message parses out result to add to body more error info, to be in line with our legacy code on server
+    #
+
+    def retrieve_error_info(results)
+      {
+        error_type: results.first[:type],
+        statusmsg: results.first[:error]
+      }
+    end
 
     def check_pbuilderid?(pbuilderid)
       # this will work on regexp string and regular strings - older version of Regexp does not handle extra // that well

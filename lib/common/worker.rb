@@ -21,8 +21,8 @@ module Arbiter
         Log.log_results(@received_message, results, @module_name, @action_name, @top_task_id, @task_id, self.class.to_s)
       end
 
-      def notify_of_error(error_message)
-        @listener.update([{ error: error_message, time: Time.now.to_s }], @request_id, true)
+      def notify_of_error(error_message, error_type = :arbiter_error)
+        @listener.update([{ error: error_message, time: Time.now.to_s, type: error_type }], @request_id, true)
       end
 
       def to_s
