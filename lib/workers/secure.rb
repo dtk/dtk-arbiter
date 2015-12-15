@@ -51,6 +51,8 @@ module Arbiter
         else
           raise ActionAbort, "System user '#{get(:system_user)}' not found on given node"
         end
+
+        success_response
       end
 
       def revoke_access
@@ -71,6 +73,8 @@ module Arbiter
         else
           raise ActionAbort, "System user '#{get(:system_user)}' not found on given node"
         end
+
+        success_response
       end
 
 
@@ -95,8 +99,7 @@ module Arbiter
         # add rsa_fingerprint to known hsots; server logic makes sure that is not get added twice so no duplicates
         File.open(known_hosts, "a" ){ |f| f.print get(:server_ssh_rsa_fingerprint) }
 
-        { :status => :succeeded }
-
+        success_response
       end
 
     private

@@ -35,6 +35,10 @@ module Arbiter
 
     protected
 
+      def success_response
+        { :status => :succeeded }
+      end
+
       def get(identifier)
         instance_variable_get("@#{identifier}") || @received_message[identifier.to_sym]
       end

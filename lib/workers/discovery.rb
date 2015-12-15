@@ -10,7 +10,7 @@ module Arbiter
 
       def process()
         Log.info("Processing ping from the server ...")
-        notify({ :result => 'pong' })
+        notify(success_response)
       end
 
     end

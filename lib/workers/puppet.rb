@@ -40,7 +40,7 @@ module Arbiter
         # finally run puppet execution
         puppet_run_response = run()
 
-        notify(:success => true)
+        notify(success_response)
       end
 
       def run()
