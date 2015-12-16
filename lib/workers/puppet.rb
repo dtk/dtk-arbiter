@@ -115,7 +115,7 @@ module Arbiter
             f.write "Execution completed with exitstatus: #{exitstatus}\n STDERR output:\n"
             f.write stderr
             f.write "STDOUT output:\n"
-            f.wirte stdout
+            f.write stdout
           end
 
           # create sym link for last_task dir
