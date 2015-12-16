@@ -84,6 +84,10 @@ module Arbiter
             command_string = "#{cmd} apply #{temp_run_file.path} --debug --modulepath /etc/puppet/modules"
 
             stdout, stderr, status, result = Utils::PuppetRunner.execute_cmd_line(command_string)
+
+            unless status.exitstatus == 0
+              raise ActionAbort, "Not able to execute puppet code, exitstatus: #{status.exitstatus}, error: #{stderr}"
+            end
           end
         rescue SystemExit => e
           if e.status == 0
@@ -112,7 +116,7 @@ module Arbiter
 
           # let us populate log file
           File.open(puppet_log_path, 'w') do |f|
-            f.write "Execution completed with exitstatus: #{exitstatus}\n STDERR output:\n"
+            f.write "Execution completed with exitstatus: #{exitstatus}\nSTDERR output:\n"
             f.write stderr
             f.write "STDOUT output:\n"
             f.write stdout

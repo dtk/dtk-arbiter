@@ -13,13 +13,7 @@ module Arbiter
 
       def self.execute_cmd_line(command_string)
         Log.debug("Puppet Runner executing command line: '#{command_string}'")
-        stdout, stderr, status, result = capture3_with_timeout(command_string)
-
-        unless status.exitstatus == 0
-          raise ActionAbort, "Not able to execute puppet code, exitstatus: #{status.exitstatus}, error: #{stderr}"
-        end
-
-        [stdout, stderr, status, result]
+        capture3_with_timeout(command_string)
       end
 
       def self.execute(puppet_definition, resource_hash)
