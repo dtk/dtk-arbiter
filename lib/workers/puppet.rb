@@ -15,6 +15,7 @@ module Arbiter
       PUPPET_LOG_DIR      = "/var/log/puppet"
       MODULE_PATH         = "/etc/puppet/modules"
       PUPPET_MODULE_PATH  = "/usr/share/dtk/puppet-modules"
+      PUPPET_LOG_TASK     = "/usr/share/dtk/tasks/"
 
       include Common::Open3
 
@@ -26,6 +27,7 @@ module Arbiter
 
         # Make sure following is prepared
         FileUtils.mkdir_p(PUPPET_MODULE_PATH) unless File.directory?(PUPPET_MODULE_PATH)
+        FileUtils.mkdir_p(PUPPET_LOG_TASK)    unless File.directory?(PUPPET_LOG_TASK)
       end
 
       def process()
@@ -54,10 +56,11 @@ module Arbiter
           puppet_version = "_#{puppet_version}_"
         end
 
-        begin
 
-          # Amar: Node manifest contains list of generated puppet manifests
-          #       This is done to support multiple puppet calls inside one puppet_apply agent call
+        temp_run_file = Tempfile.new('puppet.pp')
+        stdout, stderr, status = nil
+
+        begin
           node_manifest.each_with_index do |puppet_manifest, i|
             execute_lines = puppet_manifest || ret_execute_lines(cmps_with_attrs)
             execute_string = execute_lines.join("\n")
@@ -74,15 +77,15 @@ module Arbiter
               ]
             cmd = "/usr/bin/puppet"
 
-            file = Tempfile.new('puppet.pp')
-            file.write(execute_string)
-            file.close
 
-            command_string = "#{cmd} apply #{file.path} --debug --modulepath /etc/puppet/modules"
+            temp_run_file.write(execute_string)
+            temp_run_file.close
+
+            command_string = "#{cmd} apply #{temp_run_file.path} --debug --modulepath /etc/puppet/modules"
 
             stdout, stderr, status, result = Utils::PuppetRunner.execute_cmd_line(command_string)
           end
-         rescue SystemExit => e
+        rescue SystemExit => e
           if e.status == 0
             if dynamic_attr_info = has_dynamic_attributes?(cmps_with_attrs)
               Log.info("dynamic_attributes = #{dynamic_attr_info.inspect}")
@@ -93,6 +96,30 @@ module Arbiter
           else
             return notify_of_error("Exit status aborting operation!", :abort_action)
           end
+        ensure
+          # we log everything
+          log_dir          = File.join(PUPPET_LOG_TASK, 'dock-test', "task_id_#{get(:task_id)}")
+          last_task_dir    = File.join(PUPPET_LOG_TASK, 'last-task')
+          puppet_file_path = File.join(log_dir, 'site-stage-invocation.pp')
+          puppet_log_path  = File.join(log_dir, 'site-stage.log')
+          exitstatus       = status ? status.exitstatus : 1
+
+          # lets create task dir e.g. /usr/share/dtk/tasks/dock-test/task_id_2147548954
+          FileUtils.mkdir_p(log_dir)
+
+          # copy temp file as execution file (which it is)
+          FileUtils.cp(temp_run_file.path, puppet_file_path)
+
+          # let us populate log file
+          File.open(puppet_log_path, 'w') do |f|
+            f.write "Execution completed with exitstatus: #{exitstatus}\n STDERR output:\n"
+            f.write stderr
+            f.write "STDOUT output:\n"
+            f.wirte stdout
+          end
+
+          # create sym link for last_task dir
+          FileUtils.ln_sf(log_dir, last_task_dir)
         end
       end
 
