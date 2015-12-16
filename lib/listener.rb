@@ -100,7 +100,7 @@ module Arbiter
           }
         }
 
-      mesage[:body].merge!(retrieve_error_info(results)) if error_response
+      message[:body].merge!(retrieve_error_info(results)) if error_response
 
       # remove from thread pull
       @thread_pool.delete(request_id)
