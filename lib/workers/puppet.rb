@@ -123,7 +123,7 @@ module Arbiter
           end
 
           # create sym link for last_task dir
-          FileUtils.rm(last_task_dir)
+          FileUtils.rm(last_task_dir) if File.directory?(last_task_dir)
           FileUtils.ln_s(log_dir, last_task_dir)
           Log.info("Puppet execution information has been created, and can be found at '#{log_dir}'")
         end
