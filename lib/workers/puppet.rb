@@ -26,8 +26,8 @@ module Arbiter
         @version_context = get(:version_context)
 
         # Make sure following is prepared
-        FileUtils.mkdir_p(PUPPET_MODULE_PATH, mode: 0754) unless File.directory?(PUPPET_MODULE_PATH)
-        FileUtils.mkdir_p(PUPPET_LOG_TASK, mode: 0754)    unless File.directory?(PUPPET_LOG_TASK)
+        FileUtils.mkdir_p(PUPPET_MODULE_PATH, mode: 0755) unless File.directory?(PUPPET_MODULE_PATH)
+        FileUtils.mkdir_p(PUPPET_LOG_TASK, mode: 0755)    unless File.directory?(PUPPET_LOG_TASK)
       end
 
       def process()
