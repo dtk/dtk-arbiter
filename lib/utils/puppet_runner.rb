@@ -45,7 +45,7 @@ module Arbiter
 
     private
 
-      def grep_error_output(stdout)
+      def self.grep_error_output(stdout)
         # DEBUG SNIPPET >>> REMOVE <<<
         require (RUBY_VERSION.match(/1\.8\..*/) ? 'ruby-debug' : 'debugger');Debugger.start; debugger
         puts "Works"
