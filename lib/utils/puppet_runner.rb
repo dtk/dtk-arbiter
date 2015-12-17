@@ -16,10 +16,17 @@ module Arbiter
         command_string = "#{command_string} #{STDOUT_REDIRECT}"
         Log.debug("Puppet Runner executing command line: '#{command_string}'")
         stdout, stderr, status, result = capture3_with_timeout(command_string)
+        exitstatus = status.exitstatus
 
-        stderr = grep_error_output(stdout)
+        error_lines = stdout.split("\n").select { |line| line.match(/Error:/)}
 
-        [stdout, stderr, status.exitstatus, result]
+        unless error_lines.empty?
+          # we make sure that error lines are here, and that exitstatus matches this scenario
+          stderr = error_lines.join("\n")
+          exitstatus = 1 if exitstatus == 0
+        end
+
+        [stdout, stderr, exitstatus, result]
       end
 
       def self.execute(puppet_definition, resource_hash)
@@ -41,15 +48,6 @@ module Arbiter
         end
 
         Log.debug("Puppet Runner ran definition #{puppet_definition} with success!")
-      end
-
-    private
-
-      def self.grep_error_output(stdout)
-        # DEBUG SNIPPET >>> REMOVE <<<
-        require (RUBY_VERSION.match(/1\.8\..*/) ? 'ruby-debug' : 'debugger');Debugger.start; debugger
-        puts "Works"
-        puts "Wait for it"
       end
 
     end

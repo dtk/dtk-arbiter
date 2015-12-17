@@ -26,8 +26,8 @@ module Arbiter
         @version_context = get(:version_context)
 
         # Make sure following is prepared
-        FileUtils.mkdir_p(PUPPET_MODULE_PATH) unless File.directory?(PUPPET_MODULE_PATH)
-        FileUtils.mkdir_p(PUPPET_LOG_TASK)    unless File.directory?(PUPPET_LOG_TASK)
+        FileUtils.mkdir_p(PUPPET_MODULE_PATH, mode: 0754) unless File.directory?(PUPPET_MODULE_PATH)
+        FileUtils.mkdir_p(PUPPET_LOG_TASK, mode: 0754)    unless File.directory?(PUPPET_LOG_TASK)
       end
 
       def process()
@@ -104,9 +104,9 @@ module Arbiter
 
           # let us populate log file
           File.open(puppet_log_path, 'w') do |f|
-            f.write "Execution completed with exitstatus: #{exitstatus}\nSTDERR output:\n"
-            f.write stderr
-            f.write "STDOUT output:\n"
+            f.write "Execution completed with exitstatus: #{exitstatus}\n"
+            f.write "Errors:\n#{stderr}" if stderr
+            f.write "Full output:\n"
             f.write stdout
           end
 
