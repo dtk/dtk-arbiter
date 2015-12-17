@@ -5,6 +5,7 @@ module Arbiter
       def initialize(message, listener)
         @listener = listener
         @received_message = message
+        @agent_name  = @received_message[:agent]
         @top_task_id = @received_message[:top_task_id]
         @task_id     = @received_message[:task_id]
         @module_name = @received_message[:module_name]
@@ -19,7 +20,7 @@ module Arbiter
 
       def notify(results)
         @listener.update(results, @request_id, false)
-        Log.log_results(@received_message, results, @module_name, @action_name, @top_task_id, @task_id, self.class.to_s)
+        Log.log_results(@received_message, results, @agent_name, @action_name, @top_task_id, @task_id, self.class.to_s)
       end
 
       def notify_of_error(error_message, error_type = :arbiter_error)

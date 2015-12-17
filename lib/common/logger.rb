@@ -51,9 +51,9 @@ module Arbiter
       self.instance.logger.fatal(backtrace)
     end
 
-    def self.log_results(params_in, results, component_name, action_name, top_task_id, task_id, worker_name)
-      component_dir = File.join(LOGS_DIR, "#{component_name}_#{top_task_id}")
-      FileUtils.mkdir_p(component_dir) unless File.directory?(component_dir)
+    def self.log_results(params_in, results, agent_name, action_name, top_task_id, task_id, worker_name)
+      component_dir = File.join(LOGS_DIR, "#{top_task_id}_#{agent_name}##{action_name}")
+      FileUtils.mkdir_p(component_dir, mode: 0754) unless File.directory?(component_dir)
 
       filename = File.join(component_dir, "#{task_id}_#{action_name}.log")
       File.open(filename, 'w') do |file|
