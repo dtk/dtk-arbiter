@@ -95,7 +95,6 @@ module Arbiter
           last_task_dir    = File.join(PUPPET_LOG_TASK, 'last-task')
           puppet_file_path = File.join(log_dir, 'site-stage-invocation.pp')
           puppet_log_path  = File.join(log_dir, 'site-stage.log')
-          exitstatus       = status ? exitstatus : 1
 
           # lets create task dir e.g. /usr/share/dtk/tasks/dock-test/task_id_2147548954
           FileUtils.mkdir_p(log_dir)
