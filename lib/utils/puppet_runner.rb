@@ -10,10 +10,16 @@ module Arbiter
       extend ::Arbiter::Common::Open3
 
       PUPPET_RUNNABLE = '/usr/bin/puppet'
+      STDOUT_REDIRECT = ' 2>&1'
 
       def self.execute_cmd_line(command_string)
+        command_string = "#{command_string} #{STDOUT_REDIRECT}"
         Log.debug("Puppet Runner executing command line: '#{command_string}'")
-        capture3_with_timeout(command_string)
+        stdout, stderr, status, result = capture3_with_timeout(command_string)
+
+        stderr = grep_error_output(stdout)
+
+        [stdout, stderr, status.exitstatus, result]
       end
 
       def self.execute(puppet_definition, resource_hash)
@@ -35,6 +41,15 @@ module Arbiter
         end
 
         Log.debug("Puppet Runner ran definition #{puppet_definition} with success!")
+      end
+
+    private
+
+      def grep_error_output(stdout)
+        # DEBUG SNIPPET >>> REMOVE <<<
+        require (RUBY_VERSION.match(/1\.8\..*/) ? 'ruby-debug' : 'debugger');Debugger.start; debugger
+        puts "Works"
+        puts "Wait for it"
       end
 
     end

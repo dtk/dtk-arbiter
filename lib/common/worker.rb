@@ -10,6 +10,7 @@ module Arbiter
         @module_name = @received_message[:module_name]
         @action_name = @received_message[:method] ? @received_message[:method].to_sym : nil
         @request_id  = @received_message[:request_id]
+        @service_name = @received_message[:service_name]
       end
 
       def process()

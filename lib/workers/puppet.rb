@@ -58,7 +58,7 @@ module Arbiter
 
 
         temp_run_file = Tempfile.new('puppet.pp')
-        stdout, stderr, status = nil
+        stdout, stderr, exitstatus = nil
 
         begin
           node_manifest.each_with_index do |puppet_manifest, i|
@@ -83,30 +83,19 @@ module Arbiter
 
             command_string = "#{cmd} apply #{temp_run_file.path} --debug --modulepath /etc/puppet/modules"
 
-            stdout, stderr, status, result = Utils::PuppetRunner.execute_cmd_line(command_string)
+            stdout, stderr, exitstatus, result = Utils::PuppetRunner.execute_cmd_line(command_string)
 
-            unless status.exitstatus == 0
-              raise ActionAbort, "Not able to execute puppet code, exitstatus: #{status.exitstatus}, error: #{stderr}"
+            unless exitstatus == 0
+              raise ActionAbort, "Not able to execute puppet code, exitstatus: #{exitstatus}, error: #{stderr}"
             end
-          end
-        rescue SystemExit => e
-          if e.status == 0
-            if dynamic_attr_info = has_dynamic_attributes?(cmps_with_attrs)
-              Log.info("dynamic_attributes = #{dynamic_attr_info.inspect}")
-              process_dynamic_attributes!(ret,dynamic_attr_info)
-            else
-              # all ok
-            end
-          else
-            return notify_of_error("Exit status aborting operation!", :abort_action)
           end
         ensure
           # we log everything
-          log_dir          = File.join(PUPPET_LOG_TASK, 'dock-test', "task_id_#{get(:task_id)}")
+          log_dir          = File.join(PUPPET_LOG_TASK, get(:service_name), "task_id_#{get(:task_id)}")
           last_task_dir    = File.join(PUPPET_LOG_TASK, 'last-task')
           puppet_file_path = File.join(log_dir, 'site-stage-invocation.pp')
           puppet_log_path  = File.join(log_dir, 'site-stage.log')
-          exitstatus       = status ? status.exitstatus : 1
+          exitstatus       = status ? exitstatus : 1
 
           # lets create task dir e.g. /usr/share/dtk/tasks/dock-test/task_id_2147548954
           FileUtils.mkdir_p(log_dir)
@@ -130,18 +119,6 @@ module Arbiter
       end
 
     private
-
-      def exported_resources(cmp_name)
-        (Thread.current[:exported_resources]||{})[cmp_name]
-      end
-
-      def exported_variables(cmp_name)
-        (Thread.current[:exported_variables]||{})[cmp_name]
-      end
-
-      def exported_files(cmp_name)
-        (Thread.current[:exported_files]||{})[cmp_name]
-      end
 
       def add_imported_collection(cmp_name,attr_name,val,context={})
         p = (Thread.current[:imported_collections] ||= Hash.new)[cmp_name] ||= Hash.new
