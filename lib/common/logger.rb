@@ -55,16 +55,19 @@ module Arbiter
       component_dir = File.join(LOGS_DIR, "#{Time.now.to_i}_#{task_id}_#{agent_name}##{action_name}")
       FileUtils.mkdir_p(component_dir, mode: 0755) unless File.directory?(component_dir)
 
-      filename = File.join(component_dir, "#{task_id}_#{action_name}.log")
-      File.open(filename, 'w') do |file|
-        file.puts('Input data: ')
-        file.puts JSON.pretty_generate(params_in)
-        file.puts self.instance.all_msgs.join("\n")
-        file.puts("Handled by #{worker_name} with results: ")
-        file.puts JSON.pretty_generate(results)
+      begin
+        filename = File.join(component_dir, "#{task_id}_#{action_name}.log")
+        File.open(filename, 'w') do |file|
+          file.puts('Input data: ')
+          file.puts JSON.pretty_generate(params_in)
+          file.puts self.instance.all_msgs.join("\n")
+          file.puts("Handled by #{worker_name} with results: ")
+          file.puts JSON.pretty_generate(results)
+        end
+      rescue Exception => e
+        Log.error("Not able to serialize results and save them in log directory, reason: #{e.message}")
       end
     end
-
 
     self.singleton_class.after :debug, :info, :warn, :error do |msg, _backtrace|
       self.instance.all_msgs << msg

@@ -72,6 +72,9 @@ module Arbiter
         @if || @unless
       end
 
+      ##
+      # Checks if it is positing task being run
+      #
       def is_positioning?
         'file'.eql?(@command_type)
       end

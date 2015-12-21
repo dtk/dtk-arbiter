@@ -15,13 +15,16 @@ module Arbiter
       def self.execute_cmd_line(command_string)
         command_string = "#{command_string} #{STDOUT_REDIRECT}"
         Log.debug("Puppet Runner executing command line: '#{command_string}'")
+
+        # we redirect all to STDOUT so that we can have inside in order of status / error logs
         stdout, stderr, status, result = capture3_with_timeout(command_string)
         exitstatus = status.exitstatus
 
+        # we extract, puppet lines with error
         error_lines = stdout.split("\n").select { |line| line.match(/Error:/)}
 
+        # we make sure that error lines are here, and that exitstatus matches this scenario
         unless error_lines.empty?
-          # we make sure that error lines are here, and that exitstatus matches this scenario
           stderr = error_lines.join("\n")
           exitstatus = 1 if exitstatus == 0
         end

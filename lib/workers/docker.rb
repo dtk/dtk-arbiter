@@ -23,7 +23,7 @@ module Arbiter
       end
 
       def process()
-        # start commander runnes
+        # start commander run
         @commander.run()
 
         notify(@commander.results())
