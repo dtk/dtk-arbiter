@@ -5,12 +5,13 @@ module Arbiter
   module Docker
     class Commander
 
-      def initialize(docker_image, docker_command)
+      def initialize(docker_image, docker_command, puppet_manifest)
         unless ::Docker::Image.exist?(docker_image)
           ::Docker::Image.create('fromImage' => docker_image)
         end
         @docker_image = docker_image
         @docker_command = docker_command
+        @puppet_manifest = puppet_manifest
       end
 
       def run
@@ -22,6 +23,8 @@ require 'debugger'; debugger
         FileUtils.mkdir_p output_dir
         # make sure dtkyaml reporter is available to puppet
         FileUtils.ln_sf '/usr/share/dtk/dtk-arbiter/dtkyaml', '/etc/puppet/modules/dtkyaml'
+        # write puppet manifest
+        File.open("#{output_dir}/manifest.pp", 'w') { |file| file.write(@puppet_manifest) }
 
         # container = Docker::Container.create(
         #   'Cmd' => [command], 

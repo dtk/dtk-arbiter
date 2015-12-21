@@ -15,10 +15,11 @@ module Arbiter
         super(message_content, listener)
 require 'debugger'; debugger
         @process_pool = []
-        @execution_list = @received_message[:execution_list] || []
+#        @execution_list = @received_message[:execution_list] || []
         @docker_image = @received_message[:docker_image]
         @docker_command = @received_message[:docker_command]
-        @commander = Docker::Commander.new(@docker_image, @docker_command)
+        @puppet_manifest = @received_message[:puppet_manifest]
+        @commander = Docker::Commander.new(@docker_image, @docker_command, @puppet_manifest)
 
         #@image = Docker::Image.create('fromImage' => @docker_image )
       end
