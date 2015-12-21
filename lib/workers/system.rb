@@ -2,6 +2,9 @@ module Arbiter
   module System
     class Worker < Common::Worker
 
+      # number of lines that will be returned on first request
+      BATCH_SIZE_OF_LOG = 50
+
       attr_reader :process_pool
 
       def initialize(message_content, listener)
@@ -58,6 +61,55 @@ module Arbiter
 
         netstat_result
       end
+
+      def get_log
+        check_required!(:log_path)
+        log_path = get(:log_path)
+
+        unless File.exists?(log_path)
+          notify_of_error("File #{log_path} not found on given node.", :not_found)
+          return
+        end
+
+        # returns total number of lines in file, one is to start next iteration with new line
+        last_line  = `wc -l #{log_path} | awk '{print $1}'`.to_i + 1
+        # if there is start line from CLI request we use it, if not we take last BATCH_SIZE_OF_LOG lines
+        if get(:start_line).empty?
+          # If BATCH_SIZE_OF_LOG is bigger than last_line, then start line will be 0
+          start_line = (last_line > BATCH_SIZE_OF_LOG) ? last_line-BATCH_SIZE_OF_LOG : 0
+        else
+          start_line = get(:start_line)
+        end
+
+        # returns needed lines
+        if (get(:grep_option).nil? || get(:grep_option).empty?)
+          output = `tail -n +#{start_line} #{log_path}`
+        else
+          output = `tail -n +#{start_line} #{log_path} | grep #{get(:grep_option)}`
+        end
+
+        { :output => output, :last_line => last_line }
+      end
+
+      def grep
+        check_required!(:log_path)
+        log_path = get(:log_path)
+
+        unless File.exists?(log_path)
+          notify_of_error("File #{log_path} not found on given node.", :not_found)
+          return
+        end
+
+        # returns needed lines
+        if (get(:stop_on_first_match).empty? || get(:stop_on_first_match).nil? || get(:stop_on_first_match).eql?('false'))
+          output = `more #{log_path} | grep #{get(:grep_pattern)}`
+        else
+          output = `more #{log_path} | grep #{get(:grep_pattern)} | tail -1`
+        end
+
+        { :output => output}
+      end
+
 
     end
   end

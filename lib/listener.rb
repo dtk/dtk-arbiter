@@ -153,7 +153,7 @@ module Arbiter
           ::Arbiter::Secure::Worker.new(message, self)
         when 'action_agent'
           ::Arbiter::Action::Worker.new(message, self)
-        when 'system_agent', 'netstat', 'ps'
+        when 'system_agent', 'netstat', 'ps', 'tail'
           ::Arbiter::System::Worker.new(message, self)
         when 'discovery'
           ::Arbiter::Discovery::Worker.new(message, self)

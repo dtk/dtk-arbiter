@@ -23,4 +23,5 @@ module Arbiter
   class MissingParams  < ArbiterError; def initialize(content); super(content); @error_type = :missing_params; end end
   class InvalidContent < ArbiterError; def initialize(content); super(content); @error_type = :invalid_content; end end
   class ActionAbort    < ArbiterError; def initialize(content); super(content); @error_type = :abort_action; end end
+  class NotFound       < ArbiterError; def initialize(content); super(content); @error_type = :not_found; end end
 end
