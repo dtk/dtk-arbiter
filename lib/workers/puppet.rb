@@ -25,6 +25,9 @@ module Arbiter
         @service_name    = get(:service_name) || UNKNOWN_SERVICE
         @version_context = get(:version_context)
 
+        # Make sure this property is set
+        ENV['LC_ALL'] = "en_US.UTF-8"
+
         # Make sure following is prepared
         FileUtils.mkdir_p(PUPPET_MODULE_PATH, mode: 0755) unless File.directory?(PUPPET_MODULE_PATH)
         FileUtils.mkdir_p(PUPPET_LOG_TASK, mode: 0755)    unless File.directory?(PUPPET_LOG_TASK)
