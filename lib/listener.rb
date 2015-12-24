@@ -75,6 +75,7 @@ module Arbiter
             target_instance.notify_of_error(e.message, e.error_type)
           rescue Exception => e
             Log.fatal(e.message, e.backtrace)
+            target_instance.notify_of_error(e.message, :internal)
           end
         end)
       end

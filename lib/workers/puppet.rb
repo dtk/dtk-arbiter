@@ -4,10 +4,12 @@ require 'tempfile'
 require File.expand_path('../../common/gitclient', __FILE__)
 require File.expand_path('../../common/mixin/open3', __FILE__)
 require File.expand_path('../../utils/puppet_runner', __FILE__)
+require File.expand_path('../../puppet/dynamic_attributes', __FILE__)
 
 module Arbiter
   module Puppet
     class Worker < Common::Worker
+
 
       UNKNOWN_SERVICE = 'UNKNOWN'
       NUMBER_OF_RETRIES = 5
@@ -18,6 +20,7 @@ module Arbiter
       PUPPET_LOG_TASK     = "/usr/share/dtk/tasks/"
 
       include Common::Open3
+      include Puppet::DynamicAttributes
 
       def initialize(message_content, listener)
         super(message_content, listener)
@@ -34,8 +37,6 @@ module Arbiter
       end
 
       def process()
-        puppet_run_response = nil
-
         # we need this to pull our modules
         git_server = Utils::Facts.get!('git-server')
 
@@ -44,8 +45,9 @@ module Arbiter
 
         # finally run puppet execution
         puppet_run_response = run()
+        puppet_run_response.merge!(success_response)
 
-        notify(success_response)
+        notify(puppet_run_response)
       end
 
       def run()
@@ -91,6 +93,17 @@ module Arbiter
             unless exitstatus == 0
               raise ActionAbort, "Not able to execute puppet code, exitstatus: #{exitstatus}, error: #{stderr}"
             end
+
+            response = {}
+
+            if dynamic_attr_info = has_dynamic_attributes?(cmps_with_attrs)
+              Log.debug("Found dynamic attributes, calculating ...")
+              dynamic_attributes = process_dynamic_attributes!(dynamic_attr_info)
+              response[:dynamic_attributes] = dynamic_attributes
+              Log.debug("Found dynamic attributes, setting them to: #{dynamic_attributes.inspect}")
+            end
+
+            return response
           end
         ensure
           # we log everything
@@ -301,6 +314,7 @@ module Arbiter
         end
         ret.empty? ? nil : ret
       end
+
 
 
       def needs_import_statement?(cmp_or_def,module_name)
