@@ -100,7 +100,7 @@ module Arbiter
           puppet_log_path  = File.join(log_dir, 'site-stage.log')
 
           # lets create task dir e.g. /usr/share/dtk/tasks/dock-test/task_id_2147548954
-          FileUtils.mkdir_p(log_dir)
+          FileUtils.mkdir_p(log_dir, mode: 0755)
 
           # copy temp file as execution file (which it is)
           FileUtils.cp(temp_run_file.path, puppet_file_path)
