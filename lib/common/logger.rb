@@ -21,7 +21,7 @@ module Arbiter
       @all_msgs   =[]
       @error_msgs =[]
 
-      FileUtils.mkdir_p LOGS_DIR unless File.directory?(LOGS_DIR)
+      FileUtils.mkdir_p(LOGS_DIR, mode: 0755) unless File.directory?(LOGS_DIR)
     end
 
     def self.execution_errors()
