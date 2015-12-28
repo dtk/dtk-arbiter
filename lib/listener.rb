@@ -25,7 +25,6 @@ module Arbiter
     end
 
     def receive_msg msg
-      Log.debug "Trying to receive_msg"
       if "CONNECTED".eql?(msg.command)
         # success connecting to stomp
         subscribe(Utils::Config.inbox_topic)

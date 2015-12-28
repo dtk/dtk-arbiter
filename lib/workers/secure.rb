@@ -33,8 +33,6 @@ module Arbiter
               :user => get(:system_user)
             }
 
-
-
           Utils::PuppetRunner.execute(:ssh_authorized_key, puppet_params)
 
           # There is a bug where we are expiriencing issues with above changes not taking effect for no apperent reason

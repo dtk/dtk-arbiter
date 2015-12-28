@@ -66,7 +66,7 @@ module Arbiter
       ###
       # Reading shared variable information
       #
-      def exported_variables(cmp_name)3
+      def exported_variables(cmp_name)
         load_shared_resource(:exported_variables)[cmp_name]
       end
 
