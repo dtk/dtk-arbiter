@@ -29,6 +29,8 @@ module Arbiter
         # success connecting to stomp
         subscribe(Utils::Config.inbox_topic)
         Log.debug "Connected to STOMP and subscribed to topic '#{Utils::Config.inbox_topic}'"
+        send_hearbeat
+
       elsif "ERROR".eql?(msg.command)
         # error connecting to stomp
         Log.fatal("Not able to connect to STOMP, reason: #{msg.header['message']}. Stopping listener now ...", nil)
@@ -80,13 +82,15 @@ module Arbiter
       end
     end
 
-    def update(results, request_id, error_response = false)
+    def update(results, request_id, error_response = false, hearbeat = false)
       raise "Param request_id is mandatory" unless request_id
       statuscode = error_response ? 1 : 0
       status     = error_response ? :failed : :succeeded
 
       message = {
         requestid: request_id,
+        hearbeat:  hearbeat,
+        pbuilderid: Arbiter::PBUILDER_ID,
         body: {
           request_id: request_id,
           statuscode: statuscode,
@@ -107,6 +111,17 @@ module Arbiter
 
       Log.debug("Sending reply to '#{Utils::Config.outbox_topic}': #{message}")
       send(Utils::Config.outbox_topic, encode(message))
+    end
+
+    ##
+    # After arbiter sets up successful connection, we send a heartbeat with pbuilder_id. DTK Server on the other side will be listening to this
+    # and mark this node as up and running
+    #
+
+    def send_hearbeat
+      # we do not have sucess
+      update(:status => :succeeded, 1, false, true)
+      Log.debug "Heatbeat has been sent to '#{Utils::Config.outbox_topic}' for instance '#{Arbiter::PBUILDER_ID}' ..."
     end
 
   private
