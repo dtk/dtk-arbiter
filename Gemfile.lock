@@ -26,7 +26,7 @@ GEM
       diff-lcs (~> 1.1)
       mime-types (~> 1.15)
       posix-spawn (~> 0.3.6)
-    hiera (1.3.4)
+    hiera (1.2.1)
       json_pure
     json (1.8.2)
     json_pure (1.8.3)
@@ -39,7 +39,7 @@ GEM
       hiera (~> 1.0)
       json_pure
       rgen (~> 0.6.5)
-    rgen (0.6.6)
+    rgen (0.6.5)
 
 PLATFORMS
   ruby
@@ -54,6 +54,7 @@ DEPENDENCIES
   eventmachine
   git (= 1.2.9.1)
   grit
+  hiera (= 1.2.1)
   json (= 1.8.2)
   looksee
   parseconfig
