@@ -65,7 +65,6 @@ module Arbiter
           sleep(1)
 
           # we check status of all tasks
-          # (Usually is not good practice to change array/map you are iterating but this seems as cleanest solutions)
           @command_tasks.each do |command_task|
             # is task finished
             if command_task.exited?

@@ -2,19 +2,18 @@ require 'grit'
 module Arbiter
   module Common
     class GitClient
-      def initialize(repo_dir,opts={})
+      def initialize(repo_dir, opts={})
         @repo_dir = repo_dir
         @grit_repo = (opts[:create] ? ::Grit::Repo.init(repo_dir) : ::Grit::Repo.new(repo_dir))
       end
 
-      def clone_branch(remote_repo,branch,opts={})
+      def clone_branch(remote_repo, branch, opts={})
         git_command__remote_add(remote_repo,branch)
         git_command__checkout(opts[:sha]||branch)
       end
 
-      def pull_and_checkout_branch?(branch,opts={})
+      def pull_and_checkout_branch?(branch, opts={})
         sha = opts[:sha]
-        #shortcut
         return if sha and (sha == current_branch_or_head())
 
         unless remote_branch_exists?(branch)

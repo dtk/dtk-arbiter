@@ -5,14 +5,13 @@
 # Required-Stop:     $remote_fs $syslog
 # Default-Start:     3 4 5
 # Default-Stop:      0 1 6
-# Short-Description: Example initscript
-# Description:       This file should be used to construct scripts to be
-#                    placed in /etc/init.d.
+# Short-Description: DTK Arbiter initscript
+# Description:       DTK Arbiter initscript
 ### END INIT INFO
 
 # PATH should only include /usr/* if it runs after the mountnfs.sh script
 PATH=/sbin:/usr/sbin:/bin:/usr/bin
-DESC="Description of the service"
+DESC="DTK Arbiter service"
 NAME=dtk-arbiter
 DAEMON="/usr/share/dtk/dtk-arbiter/wrappers/dtk-arbiter"
 #DAEMON_ARGS="--options args"

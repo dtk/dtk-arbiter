@@ -11,6 +11,6 @@ Puppet::Reports.register_report(:dtkyaml) do
     output_dir = "/host_volume"
     output_file = "#{output_dir}/report.yml"
     FileUtils.mkdir_p output_dir
-    File.open(output_file, 'w') {|f| f.write self.to_yaml } 
+    File.open(output_file, 'w') {|f| f.write self.to_yaml }
   end
 end

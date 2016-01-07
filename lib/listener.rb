@@ -5,6 +5,7 @@ require 'openssl'
 
 require File.expand_path('../common/worker', __FILE__)
 require File.expand_path('../common/logger', __FILE__)
+require File.expand_path('../common/error', __FILE__)
 require File.expand_path('../utils/ssh_cipher', __FILE__)
 
 Dir["lib/workers/*.rb"].each do |file_path|
@@ -24,11 +25,12 @@ module Arbiter
     end
 
     def receive_msg msg
-      Log.debug "Trying to receive_msg"
       if "CONNECTED".eql?(msg.command)
         # success connecting to stomp
         subscribe(Utils::Config.inbox_topic)
         Log.debug "Connected to STOMP and subscribed to topic '#{Utils::Config.inbox_topic}'"
+        send_hearbeat
+
       elsif "ERROR".eql?(msg.command)
         # error connecting to stomp
         Log.fatal("Not able to connect to STOMP, reason: #{msg.header['message']}. Stopping listener now ...", nil)
@@ -70,25 +72,39 @@ module Arbiter
             @thread_pool[original_message[:request_id]] = Thread.current
 
             target_instance.process()
+          rescue ArbiterError => e
+            target_instance.notify_of_error(e.message, e.error_type)
           rescue Exception => e
             Log.fatal(e.message, e.backtrace)
+            target_instance.notify_of_error(e.message, :internal)
           end
         end)
       end
     end
 
-    def update(results, request_id)
-      raise "Request_id is mandatory param" unless request_id
+    def update(results, request_id, error_response = false, heartbeat = false)
+      raise "Param request_id is mandatory" unless request_id
+      statuscode = error_response ? 1 : 0
+      status     = error_response ? :failed : :succeeded
 
       message = {
+        requestid: request_id,
+        heartbeat:  heartbeat,
+        pbuilderid: Arbiter::PBUILDER_ID,
         body: {
-          data: { results: results },
           request_id: request_id,
-          pbuilderid: Arbiter::PBUILDER_ID,
-          status: :ok,
-          statuscode: 0
+          statuscode: statuscode,
+          status: status,
+          data: {
+            data: results,
+            status: status,
+            pbuilderid: Arbiter::PBUILDER_ID,
+            statuscode: statuscode
+            }
+          }
         }
-      }
+
+      message[:body].merge!(retrieve_error_info(results)) if error_response
 
       # remove from thread pull
       @thread_pool.delete(request_id)
@@ -97,8 +113,29 @@ module Arbiter
       send(Utils::Config.outbox_topic, encode(message))
     end
 
+    ##
+    # After arbiter sets up successful connection, we send a heartbeat with pbuilder_id. DTK Server on the other side will be listening to this
+    # and mark this node as up and running
+    #
+
+    def send_hearbeat
+      # we do not have sucess
+      update({ :status => :succeeded }, 1, false, true)
+      Log.debug "Heatbeat has been sent to '#{Utils::Config.outbox_topic}' for instance '#{Arbiter::PBUILDER_ID}' ..."
+    end
 
   private
+
+    ##
+    # This message parses out result to add to body more error info, to be in line with our legacy code on server
+    #
+
+    def retrieve_error_info(results)
+      {
+        error_type: results.first[:type],
+        statusmsg: results.first[:error]
+      }
+    end
 
     def check_pbuilderid?(pbuilderid)
       # this will work on regexp string and regular strings - older version of Regexp does not handle extra // that well
@@ -127,10 +164,24 @@ module Arbiter
       target_agent = message[:agent] || 'action'
 
       return case target_agent
+        when 'secure_agent', 'git_access'
+          ::Arbiter::Secure::Worker.new(message, self)
         when 'action_agent'
+<<<<<<< HEAD
           ::Arbiter::Action::AgentWorker.new(message, self)
         when 'docker_agent'
           ::Arbiter::Docker::DockerWorker.new(message, self)
+=======
+          ::Arbiter::Action::Worker.new(message, self)
+        when 'system_agent', 'netstat', 'ps', 'tail'
+          ::Arbiter::System::Worker.new(message, self)
+        when 'discovery'
+          ::Arbiter::Discovery::Worker.new(message, self)
+        when 'puppet_apply'
+          ::Arbiter::Puppet::Worker.new(message, self)
+        when 'docker_agent'
+          ::Arbiter::Docker::Worker.new(message, self)
+>>>>>>> origin/stable
         when 'cancel_agent'
           Log.info "Sending cancel signal to worker for request (ID: '#{request_id}')"
           cancel_agent(message[:request_id])

@@ -9,6 +9,7 @@ gem 'daemons'
 gem 'parseconfig'
 gem 'docker-api'
 gem 'grit'
+gem 'puppet'
 
 group :development do
   gem 'dotenv'
