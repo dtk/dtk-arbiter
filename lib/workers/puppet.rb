@@ -211,6 +211,13 @@ module Arbiter
               end
             end
 
+            # we remove sym link if it exists
+            if File.symlink?(repo_dir)
+              FileUtils.rm(repo_dir)
+            elsif File.directory?(repo_dir)
+              FileUtils.rm_r(repo_dir)
+            end
+
             puppet_dir = "#{PUPPET_MODULE_PATH}/#{module_name}/puppet"
 
             if File.directory?(puppet_dir)
