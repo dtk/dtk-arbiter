@@ -167,11 +167,6 @@ module Arbiter
         when 'secure_agent', 'git_access'
           ::Arbiter::Secure::Worker.new(message, self)
         when 'action_agent'
-<<<<<<< HEAD
-          ::Arbiter::Action::AgentWorker.new(message, self)
-        when 'docker_agent'
-          ::Arbiter::Docker::DockerWorker.new(message, self)
-=======
           ::Arbiter::Action::Worker.new(message, self)
         when 'system_agent', 'netstat', 'ps', 'tail'
           ::Arbiter::System::Worker.new(message, self)
@@ -181,7 +176,6 @@ module Arbiter
           ::Arbiter::Puppet::Worker.new(message, self)
         when 'docker_agent'
           ::Arbiter::Docker::Worker.new(message, self)
->>>>>>> origin/stable
         when 'cancel_agent'
           Log.info "Sending cancel signal to worker for request (ID: '#{request_id}')"
           cancel_agent(message[:request_id])
