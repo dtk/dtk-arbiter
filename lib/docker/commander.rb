@@ -11,9 +11,11 @@ module Arbiter
         @dockerfile = dockerfile
         @puppet_manifest = puppet_manifest
         @execution_type = execution_type
+
         unless ::Docker::Image.exist?(docker_image) && !@dockerfile
           ::Docker::Image.create('fromImage' => docker_image)
         end
+
          # build required docker image if requested
         if @dockerfile
           Log.info "Building docker image: #{docker_image}"
@@ -23,7 +25,7 @@ module Arbiter
       end
 
       def run
-#require 'debugger'; debugger
+        # require 'debugger'; debugger
         docker_container_name = "dtk#{Time.now.to_i}"
         output_dir = "/usr/share/dtk/docker-worker/#{docker_container_name}"
         output_dir_container = "/host_volume"
@@ -37,7 +39,7 @@ module Arbiter
         # make sure r8 module is available
         FileUtils.cp_r "/etc/puppet/modules/r8", puppet_modules_dir unless File.exist? "#{puppet_modules_dir}/r8"
 
-        docker_cli_cmd = "docker run --name #{docker_container_name} -v #{output_dir}:#{output_dir_container} -v #{output_dir}/tmp:/tmp" + 
+        docker_cli_cmd = "docker run --name #{docker_container_name} -v #{output_dir}:#{output_dir_container} -v #{output_dir}/tmp:/tmp" +
                         ((@execution_type.eql? 'puppet') ? " -v #{puppet_modules_dir}:/etc/puppet/modules" : "") + " #{@docker_image} #{@docker_command}"
         #docker_run_output = `docker run -v #{output_dir}:#{output_dir_container} #{image_id} #{command}`
         @docker_run_stdout = nil

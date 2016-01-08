@@ -14,7 +14,6 @@ module Arbiter
       def initialize(message_content, listener)
         super(message_content, listener)
         @process_pool = []
-        @execution_list = @received_message[:execution_list] || []
         @docker_image = @received_message[:docker_image]
         @docker_command = @received_message[:docker_command]
         @dockerfile = @received_message[:dockerfile]
@@ -22,7 +21,7 @@ module Arbiter
         @execution_type = @received_message[:execution_type]
         @commander = Docker::Commander.new(@docker_image, @docker_command, @puppet_manifest)
 
-        #@image = Docker::Image.create('fromImage' => @docker_image )
+        # @image = Docker::Image.create('fromImage' => @docker_image )
       end
 
       def process()
