@@ -22,8 +22,6 @@ module Arbiter
       include Puppet::DynamicAttributes
 
       def initialize(message_content, listener)
-        # DEBUG SNIPPET >>> REMOVE <<<
-        require (RUBY_VERSION.match(/1\.8\..*/) ? 'ruby-debug' : 'debugger');Debugger.start; debugger
         super(message_content, listener)
 
         @service_name    = get(:service_name) || UNKNOWN_SERVICE
