@@ -1,8 +1,4 @@
-require 'open3'
 require 'timeout'
-
-require File.expand_path('../../common/mixin/open3', __FILE__)
-
 
 module Arbiter
   module Action

@@ -1,8 +1,5 @@
 require 'puppet'
 
-require File.expand_path('../../common/mixin/open3', __FILE__)
-
-
 module Arbiter
   module Utils
     class PuppetRunner

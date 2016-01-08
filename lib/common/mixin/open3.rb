@@ -1,4 +1,5 @@
 require 'timeout'
+require 'open3'
 
 module Arbiter
   module Common

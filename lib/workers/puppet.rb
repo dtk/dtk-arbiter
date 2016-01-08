@@ -2,7 +2,6 @@ require 'fileutils'
 require 'tempfile'
 
 require File.expand_path('../../common/gitclient', __FILE__)
-require File.expand_path('../../common/mixin/open3', __FILE__)
 require File.expand_path('../../utils/puppet_runner', __FILE__)
 require File.expand_path('../../puppet/dynamic_attributes', __FILE__)
 
@@ -23,6 +22,8 @@ module Arbiter
       include Puppet::DynamicAttributes
 
       def initialize(message_content, listener)
+        # DEBUG SNIPPET >>> REMOVE <<<
+        require (RUBY_VERSION.match(/1\.8\..*/) ? 'ruby-debug' : 'debugger');Debugger.start; debugger
         super(message_content, listener)
 
         @service_name    = get(:service_name) || UNKNOWN_SERVICE

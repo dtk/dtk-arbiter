@@ -6,6 +6,7 @@ require 'openssl'
 require File.expand_path('../common/worker', __FILE__)
 require File.expand_path('../common/logger', __FILE__)
 require File.expand_path('../common/error', __FILE__)
+require File.expand_path('../common/mixin/open3', __FILE__)
 require File.expand_path('../utils/ssh_cipher', __FILE__)
 
 Dir["lib/workers/*.rb"].each do |file_path|
