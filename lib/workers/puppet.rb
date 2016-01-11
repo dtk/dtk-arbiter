@@ -125,6 +125,10 @@ module Arbiter
             f.write stdout
           end
 
+          # make sure that correct permissions are set on puppet files
+          File.chmod(0755, puppet_file_path)
+          File.chmod(0755, puppet_log_path)
+
           # create sym link for last_task dir
           FileUtils.rm(last_task_dir) if File.directory?(last_task_dir)
           FileUtils.ln_s(log_dir, last_task_dir)

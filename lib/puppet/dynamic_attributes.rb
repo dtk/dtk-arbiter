@@ -79,7 +79,7 @@ module Arbiter
       def exported_files(cmp_name)
         raise "exported_files #{cmp_name}"
 
-        (Thread.current[:exported_files]||{})[cmp_name]
+        load_shared_resource[:exported_files][cmp_name]
       end
 
       ###
