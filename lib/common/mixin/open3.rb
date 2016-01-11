@@ -6,6 +6,15 @@ module Arbiter
     module Open3
 
       STREAM_TIMEOUT  = 5
+      AGNOSTIC_PUPPET_VARS = {
+         "BUNDLE_GEMFILE" => nil,
+         "BUNDLE_BIN_PATH" => nil,
+         "RUBYOPT" => nil,
+         "rvm_" => nil,
+         "RACK_ENV" => nil,
+         "RAILS_ENV" => nil,
+         "PWD" => @pwd
+       }
 
       ##
       # Open3 method extended with timeout, more info https://gist.github.com/pasela/9392115
@@ -28,7 +37,6 @@ module Arbiter
         spawn_opts[:in]  = in_r
         spawn_opts[:out] = out_w
         spawn_opts[:err] = err_w
-        spawn_opts[:unsetenv_others] = true
 
         result = {
           :pid     => nil,
@@ -44,7 +52,7 @@ module Arbiter
 
         begin
           Timeout.timeout(opts[:timeout]) do
-            result[:pid] = spawn(*cmd, spawn_opts)
+            result[:pid] = spawn(AGNOSTIC_PUPPET_VARS, *cmd, spawn_opts)
             wait_thr = Process.detach(result[:pid])
             in_r.close
             out_w.close
