@@ -12,8 +12,7 @@ module Arbiter
          "RUBYOPT" => nil,
          "rvm_" => nil,
          "RACK_ENV" => nil,
-         "RAILS_ENV" => nil,
-         "PWD" => @pwd
+         "RAILS_ENV" => nil
        }
 
       ##
