@@ -77,7 +77,7 @@ module Arbiter
       end
 
       def exported_files(cmp_name)
-        load_shared_resource[:exported_files][cmp_name]
+        load_shared_resource(:exported_files)[cmp_name]
       end
 
       ###
