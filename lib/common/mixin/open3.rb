@@ -28,7 +28,6 @@ module Arbiter
         spawn_opts[:in]  = in_r
         spawn_opts[:out] = out_w
         spawn_opts[:err] = err_w
-        spawn_opts[:unsetenv_others] = true
 
         result = {
           :pid     => nil,
