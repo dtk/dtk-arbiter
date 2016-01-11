@@ -34,7 +34,7 @@ module Arbiter
         end
 
         unless missing_dyn_attrs.empty?
-          set_error_missing_dynamic_attrs!(ret, missing_dyn_attrs)
+          raise_missing_dynamic_attrs!(missing_dyn_attrs)
         end
 
         dyn_attr_assigns
