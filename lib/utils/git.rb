@@ -9,108 +9,97 @@ module Arbiter
   module Utils
     class Git
 
+      PUPPET_MODULE_PATH  = "/usr/share/dtk/puppet-modules"
+      MODULE_PATH         = "/etc/puppet/modules"
       NUMBER_OF_RETRIES = 5
       @log = Log.instance
 
+      def self.git_repo_full_url(git_url, repo_name)
+        "#{git_url}/#{repo_name}"
+      end
+
+      def pull_module(repo_dir, branch, opts={})
+        git_repo = Common::GitClient.new(repo_dir)
+        git_repo.pull_and_checkout_branch?(branch,opts)
+        true
+      end
+
+      def self.clean_and_clone_module(repo_dir,remote_repo,branch,opts={})
+        FileUtils.rm_rf repo_dir if File.exists?(repo_dir)
+        git_repo = Common::GitClient.new(repo_dir, :create => true)
+        git_repo.clone_branch(remote_repo,branch,opts)
+        true
+      end
+
+      #
+      # This will delete directory or symlink
+      #
+      def self.purge_location(repo_dir)
+        if File.symlink?(repo_dir)
+          FileUtils.rm(repo_dir)
+        elsif File.directory?(repo_dir)
+          FileUtils.rm_r(repo_dir)
+        end
+      end
+
       def self.pull_modules(version_context,git_server)
-        ret = Response.new
-        ENV['GIT_SHELL'] = nil #This is put in because if vcsrepo Puppet module used it sets this
-        error_backtrace = nil
         begin
           version_context.each do |vc|
-            [:repo,:implementation,:branch].each do |field|
+            [:repo, :implementation, :branch].each do |field|
               unless vc[field]
-                raise "version context does not have :#{field} field"
+                raise MissingParams, "Version context does not have :#{field} field"
               end
             end
 
-            FileUtils.mkdir_p(DTKPuppetModulePath) unless File.directory?(DTKPuppetModulePath)
-
             module_name     = vc[:implementation]
-            puppet_repo_dir = "#{DTKPuppetModulePath}/#{module_name}"
-            repo_dir        = "#{ModulePath}/#{module_name}"
+            puppet_repo_dir = "#{PUPPET_MODULE_PATH}/#{module_name}"
+            repo_dir        = "#{MODULE_PATH}/#{module_name}"
             remote_repo     = git_repo_full_url(git_server, vc[:repo])
 
             opts = Hash.new
             opts.merge!(:sha => vc[:sha]) if vc[:sha]
 
-            clean_and_clone = true
+            pull_success = false
+
             if File.exists?("#{puppet_repo_dir}/.git")
-              pull_err = trap_and_return_error do
-                pull_module(puppet_repo_dir, vc[:branch], opts)
-              end
-              # clean_and_clone set so if pull error then try again, this time cleaning dir and freshly cleaning
-              clean_and_clone = !pull_err.nil?
+              pull_success = pull_module(puppet_repo_dir, vc[:branch], opts) rescue false
             end
 
-            if clean_and_clone
+            unless pull_success
               begin
-                tries ||= NUMBER_OF_RETRIES
+                tries ||= 5
                 clean_and_clone_module(puppet_repo_dir, remote_repo,vc[:branch], opts)
                rescue Exception => e
-                # to achieve idempotent behavior; fully remove directory if any problems
-                FileUtils.rm_rf puppet_repo_dir
                 unless (tries -= 1).zero?
-                  @log.info("Re-trying last command becuase of error: #{e.message}, retries left: #{tries}")
+                  Log.info("Re-trying puppet clone for '#{puppet_repo_dir}' becuase of error: #{e.message}, retries left: #{tries}")
                   sleep(1)
                   retry
                 end
-                # TODO: not used now
-                error_backtrace = backtrace_subset(e)
+
+                # time to give up - sending error response
                 raise e
               end
             end
 
-            # remove symlink if exist already
+            # we remove sym link if it exists
             if File.symlink?(repo_dir)
               FileUtils.rm(repo_dir)
             elsif File.directory?(repo_dir)
               FileUtils.rm_r(repo_dir)
             end
 
-            puppet_dir = "#{DTKPuppetModulePath}/#{module_name}/puppet"
+            puppet_dir = "#{PUPPET_MODULE_PATH}/#{module_name}/puppet"
 
             if File.directory?(puppet_dir)
               FileUtils.ln_sf(puppet_dir, repo_dir)
             else
-              FileUtils.ln_sf("#{DTKPuppetModulePath}/#{module_name}", repo_dir)
+              FileUtils.ln_sf("#{PUPPET_MODULE_PATH}/#{module_name}", repo_dir)
             end
           end
-          ret.set_status_succeeded!()
-         rescue Exception => e
-          log_error(e)
-          ret.set_status_failed!()
-          ret.merge!(error_info(e))
          ensure
-          #TODO: may mot be needed now switch to grit
-          #git library sets these vars; so reseting here
-          %w{GIT_DIR GIT_INDEX_FILE GIT_WORK_TREE}.each{|var|ENV[var]=nil}
+          # this is due to GIT custom againt we are using
+          %w{GIT_DIR GIT_INDEX_FILE GIT_WORK_TREE}.each { |var| ENV[var] = nil }
         end
-        ret
-      end
-
-      def self.pull_module(repo_dir,branch,opts={})
-        git_repo = ::Arbiter::Common::GitClient.new(repo_dir)
-        git_repo.pull_and_checkout_branch?(branch,opts)
-      end
-
-      def self.clean_and_clone_module(repo_dir,remote_repo,branch,opts={})
-        FileUtils.rm_rf repo_dir if File.exists?(repo_dir)
-        git_repo = ::Arbiter::Common::GitClient.new(repo_dir,:create=>true)
-        git_repo.clone_branch(remote_repo,branch,opts)
-      end
-
-      def self.git_repo_full_url(git_url, repo_name)
-        "#{git_url}/#{repo_name}"
-      end
-
-      def self.log_error(e)
-        log_error = ([e.inspect]+backtrace_subset(e)).join("\n")
-        @log.info("\n----------------error-----\n#{log_error}\n----------------error-----")
-      end
-
-      def self.backtrace_subset(e)
-        e.backtrace[0..10]
       end
 
     end
