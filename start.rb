@@ -47,6 +47,10 @@ end
 if options[:development]
   require 'dotenv'
   Dotenv.load
+else
+  # this is running as service and following ENVs are needed
+  ENV['HOME'] = '/root'
+  Arbiter::Log.info("DTK Arbiter service environment variables set!")
 end
 
 begin
