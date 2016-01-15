@@ -27,8 +27,6 @@ fi
 start() {
 	[ -x $exec ] || exit 5
 
-	umask 077
-
         echo -n $"Starting dtk-arbiter: "
         daemon --pidfile="$PIDFILE" $exec
         RETVAL=$?
