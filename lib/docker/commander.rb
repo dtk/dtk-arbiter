@@ -70,11 +70,10 @@ module Arbiter
         @results[:status] = exit_status.exitstatus
         @results[:dynamic_attributes] = read_dynamic_attributes(output_dir_tmp)
 
-
-
         # cleanup
         Log.info("Deleting container and doing cleanup")
         container.delete(:force => true)
+
         # http://unix.stackexchange.com/a/117848
         system("find #{output_dir} -depth -type f -exec shred -n 1 -z -u {} \\;")
         FileUtils.rm_rf(output_dir)

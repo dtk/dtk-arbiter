@@ -1,6 +1,5 @@
 
 require 'bundler'
-
 Bundler.setup
 
 require 'eventmachine'
@@ -47,14 +46,18 @@ end
 if options[:development]
   require 'dotenv'
   Dotenv.load
+else
+  # this is running as service and following ENVs are needed
+  ENV['HOME'] = '/root'
+  Arbiter::Log.info("DTK Arbiter running as a service, setting needed environment variables")
 end
 
 begin
   EM.run {
-    Signal.trap('INT') { EM.stop }
-    Signal.trap('TERM'){ EM.stop }
+    Signal.trap('INT')  { EM.stop }
+    Signal.trap('TERM') { EM.stop }
 
-    Arbiter::Log.debug "Starting EventMachine reactor"
+    Arbiter::Log.debug "Starting Arbiter(EventMachine) listener ..."
 
     EM.connect Arbiter::Utils::Config.stomp_url, Arbiter::Utils::Config.stomp_port, Arbiter::Listener
     Arbiter::Log.info "Arbiter listener has been successfully started. Listening to #{Arbiter::Utils::Config.full_url} ..."

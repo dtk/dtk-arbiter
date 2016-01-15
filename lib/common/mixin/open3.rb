@@ -6,14 +6,16 @@ module Arbiter
     module Open3
 
       STREAM_TIMEOUT  = 5
+
+      # Running puppet directly on system and from ruby process has proven different. Following is set of environment variables
+      # that assures proper execution from bundler / rvm ruby
       AGNOSTIC_PUPPET_VARS = {
          "BUNDLE_GEMFILE" => nil,
          "BUNDLE_BIN_PATH" => nil,
          "RUBYOPT" => nil,
          "rvm_" => nil,
          "RACK_ENV" => nil,
-         "RAILS_ENV" => nil,
-         "PWD" => @pwd
+         "RAILS_ENV" => nil
        }
 
       ##

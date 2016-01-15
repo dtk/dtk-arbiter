@@ -1,3 +1,7 @@
+###
+# Part of legacy mcollective code, marked for refactoring
+#
+
 module Arbiter
   module Puppet
     module DynamicAttributes
