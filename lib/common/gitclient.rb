@@ -1,4 +1,5 @@
 require 'grit'
+
 module Arbiter
   module Common
     class GitClient
@@ -67,7 +68,7 @@ module Arbiter
       end
 
       def current_branch_or_head()
-        #this returns sha when detached head
+        # this returns sha when head has been detached
         if @grit_repo.head
           @grit_repo.head.name
         elsif @grit_repo.commit('HEAD')

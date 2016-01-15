@@ -1,13 +1,16 @@
 ### Welcome to DTK Arbiter
 
-##### Requirements
 
-* System
-* Ruby 1.9.3+
-
-###### System
+###### Description
 
 DTK Arbiter is ruby process which uses EventMachine for continus running. It can be run either in foreground or using the provided init scripts.
+
+DTK Arbiter is small process meant to be distributed on remote nodes to provide communication via STOMP. It aggregates and communicates with master nodes and it is easily extendable. It commes with parallel worker execution and strong SSH based message encryption. It has been developed to replace Mcollective functionality with its much simplfied and efficient design.
+
+##### Requirements
+
+* Ruby 1.9.3+
+* Unix
 
 ###### Ruby
 
@@ -42,7 +45,7 @@ If available, it can also read the MCollective server configuration file (`/etc/
 
 From dtk-arbiter folder run command:
 
-    ruby start.rb
+    ruby start.rb [--development]
 
 ### Calls from dtk client
 
@@ -51,8 +54,4 @@ From `dtk:/developer>` you can run:
     run-agent dock-test system_agent "{'module_name':'r8::stdlib','action_name':'get_ps','top_task_id':100000001,'task_id':100000002 }"
     run-agent dock-test action_agent "{'module_name':'r8::stdlib','action_name':'create','top_task_id':100000001,'task_id':100000002,'execution_list':[{'type':'syscall','command':'sleep 10; echo jao;','timeout':0,'stdout_redirect':true}]}"
 
-<<<<<<< HEAD
-Secure#add_rsa_info
-=======
 
->>>>>>> b3bb5a80ffd107c2793393e45afe47845c6b294d

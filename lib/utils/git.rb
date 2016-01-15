@@ -2,15 +2,14 @@ require 'rubygems'
 require 'grit'
 require File.expand_path('../common/gitclient',File.dirname(__FILE__))
 
-ModulePath                  = "/etc/puppet/modules"
-DTKPuppetModulePath         = "/usr/share/dtk/puppet-modules"
+MODULE_PATH      = "/etc/puppet/modules"
+DTK_PUPPET_PATH  = "/usr/share/dtk/puppet-modules"
 
 module Arbiter
   module Utils
     class Git
 
       NUMBER_OF_RETRIES = 5
-      @log = Log.instance
 
       def self.pull_modules(version_context,git_server)
         ret = Response.new
@@ -24,11 +23,11 @@ module Arbiter
               end
             end
 
-            FileUtils.mkdir_p(DTKPuppetModulePath) unless File.directory?(DTKPuppetModulePath)
+            FileUtils.mkdir_p(DTK_PUPPET_PATH) unless File.directory?(DTK_PUPPET_PATH)
 
             module_name     = vc[:implementation]
-            puppet_repo_dir = "#{DTKPuppetModulePath}/#{module_name}"
-            repo_dir        = "#{ModulePath}/#{module_name}"
+            puppet_repo_dir = "#{DTK_PUPPET_PATH}/#{module_name}"
+            repo_dir        = "#{MODULE_PATH}/#{module_name}"
             remote_repo     = git_repo_full_url(git_server, vc[:repo])
 
             opts = Hash.new
@@ -51,7 +50,7 @@ module Arbiter
                 # to achieve idempotent behavior; fully remove directory if any problems
                 FileUtils.rm_rf puppet_repo_dir
                 unless (tries -= 1).zero?
-                  @log.info("Re-trying last command becuase of error: #{e.message}, retries left: #{tries}")
+                  Log.info("Re-trying last command becuase of error: #{e.message}, retries left: #{tries}")
                   sleep(1)
                   retry
                 end
@@ -68,12 +67,12 @@ module Arbiter
               FileUtils.rm_r(repo_dir)
             end
 
-            puppet_dir = "#{DTKPuppetModulePath}/#{module_name}/puppet"
+            puppet_dir = "#{DTK_PUPPET_PATH}/#{module_name}/puppet"
 
             if File.directory?(puppet_dir)
               FileUtils.ln_sf(puppet_dir, repo_dir)
             else
-              FileUtils.ln_sf("#{DTKPuppetModulePath}/#{module_name}", repo_dir)
+              FileUtils.ln_sf("#{DTK_PUPPET_PATH}/#{module_name}", repo_dir)
             end
           end
           ret.set_status_succeeded!()
@@ -106,7 +105,7 @@ module Arbiter
 
       def self.log_error(e)
         log_error = ([e.inspect]+backtrace_subset(e)).join("\n")
-        @log.info("\n----------------error-----\n#{log_error}\n----------------error-----")
+        Log.info("\n----------------error-----\n#{log_error}\n----------------error-----")
       end
 
       def self.backtrace_subset(e)
