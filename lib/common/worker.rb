@@ -37,8 +37,8 @@ module Arbiter
 
     protected
 
-      def success_response
-        { :status => :succeeded }
+      def success_response(extended_response = {})
+        { :status => :succeeded }.merge!(extended_response)
       end
 
       def get(identifier)
