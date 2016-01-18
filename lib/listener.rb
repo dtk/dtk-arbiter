@@ -165,7 +165,7 @@ module Arbiter
       target_agent = message[:agent] || 'action'
 
       return case target_agent
-        when 'secure_agent', 'git_access'
+        when 'secure_agent', 'git_access', 'ssh_agent'
           ::Arbiter::Secure::Worker.new(message, self)
         when 'action_agent'
           ::Arbiter::Action::Worker.new(message, self)
