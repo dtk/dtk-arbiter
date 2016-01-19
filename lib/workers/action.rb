@@ -24,9 +24,33 @@ module Arbiter
 
         # start commander runs
         @commander.run()
+        results = @commander.results()
 
-        notify(@commander.results())
+
+        if are_there_errors_in_results?(results)
+          notify_of_error_results(results)
+        else
+          notify(results)
+        end
       end
+
+    private
+
+      ##
+      # Simple check to see if there non zero status codes
+      #
+
+      def are_there_errors_in_results?(results)
+        error_outputs = results.select { |a| a[:status] != 0 }
+        !error_outputs.empty?
+      end
+
+      # def are_there_errors_in_results?(results)
+      #   error_outputs = results.select { |a| a[:status] != 0 }.uniq
+      #   return nil if error_outputs.empty?
+
+      #   results.collect { |a| "Command '#{a[:description]}' failed with status code #{a[:status]}, output: #{a[:stderr]}"}.join(', ')
+      # end
 
     end
   end

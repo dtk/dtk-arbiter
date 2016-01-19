@@ -24,6 +24,8 @@ module Arbiter
       def grant_access
         check_required!(:rsa_pub_key, :rsa_pub_name, :system_user)
 
+        ret = {}
+
         if does_user_exist?(get(:system_user))
           puppet_params = {
               :name => get(:rsa_pub_name),
@@ -45,16 +47,17 @@ module Arbiter
 
           raise ActionAbort, "We were not able to add SSH access for given node (PuppetError)" unless key_added?(puppet_params[:user], puppet_params[:key])
 
-          { :message => "Access to system user '#{get(:system_user)}' has been granted for '#{get(:rsa_pub_name)}'" }
+          ret = { :message => "Access to system user '#{get(:system_user)}' has been granted for '#{get(:rsa_pub_name)}'" }
         else
           raise ActionAbort, "System user '#{get(:system_user)}' not found on given node"
         end
 
-        success_response
+        success_response(ret)
       end
 
       def revoke_access
         check_required!(:rsa_pub_name, :system_user)
+        ret = {}
 
         if does_user_exist?(get(:system_user))
           Utils::PuppetRunner.execute(
@@ -67,12 +70,12 @@ module Arbiter
            }
           )
 
-          { :message => "Access for system user '#{get(:system_user)}' has been revoked" }
+          ret = { :message => "Access for system user '#{get(:system_user)}' has been revoked" }
         else
           raise ActionAbort, "System user '#{get(:system_user)}' not found on given node"
         end
 
-        success_response
+        success_response(ret)
       end
 
 

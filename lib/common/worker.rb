@@ -18,13 +18,17 @@ module Arbiter
         raise "You need to override this method"
       end
 
-      def notify(results)
-        @listener.update(results, @request_id, false)
+      def notify(results, is_error_results = false)
+        @listener.update(results, @request_id, is_error_results)
         Log.log_results(@received_message, results, @agent_name, @action_name, @top_task_id, @task_id, self.class.to_s)
       end
 
       def notify_of_error(error_message, error_type = :arbiter_error)
         @listener.update([{ error: error_message, time: Time.now.to_s, type: error_type }], @request_id, true)
+      end
+
+      def notify_of_error_results(results)
+        notify(results, true)
       end
 
       def to_s
@@ -37,8 +41,8 @@ module Arbiter
 
     protected
 
-      def success_response
-        { :status => :succeeded }
+      def success_response(extended_response = {})
+        { :status => :succeeded }.merge!(extended_response)
       end
 
       def get(identifier)
