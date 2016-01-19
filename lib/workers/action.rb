@@ -27,8 +27,8 @@ module Arbiter
         results = @commander.results()
 
 
-        if error_message = are_there_errors_in_results?(results)
-          notify_of_error(error_message, :abort_action)
+        if are_there_errors_in_results?(results)
+          notify_of_error_results(results)
         else
           notify(results)
         end
@@ -41,11 +41,16 @@ module Arbiter
       #
 
       def are_there_errors_in_results?(results)
-        error_outputs = results.select { |a| a[:status] != 0 }.uniq
-        return nil if error_outputs.empty?
-
-        results.collect { |a| "Command '#{a[:description]}' failed with status code #{a[:status]}, output: #{a[:stderr]}"}.join(', ')
+        error_outputs = results.select { |a| a[:status] != 0 }
+        !error_outputs.empty?
       end
+
+      # def are_there_errors_in_results?(results)
+      #   error_outputs = results.select { |a| a[:status] != 0 }.uniq
+      #   return nil if error_outputs.empty?
+
+      #   results.collect { |a| "Command '#{a[:description]}' failed with status code #{a[:status]}, output: #{a[:stderr]}"}.join(', ')
+      # end
 
     end
   end
