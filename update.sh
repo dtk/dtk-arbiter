@@ -11,9 +11,8 @@ export PATH=/opt/puppet-omnibus/embedded/bin/:${PATH}
 branch=${1:-stable}
 
 cd ${base_dir}
+git fetch
 if git rev-parse --verify origin/${branch}; then
-  # reset everything just in case and then pull
-  git fetch
   git reset --hard origin/${branch}
   bundle install
 else
