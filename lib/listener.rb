@@ -22,7 +22,6 @@ module Arbiter
     def connection_completed
       connect :login => Utils::Config.stomp_username, :passcode => Utils::Config.stomp_password
       @thread_pool = {}
-      Log.debug "connection completed"
     end
 
     def receive_msg msg
@@ -38,11 +37,9 @@ module Arbiter
         exit(1)
       else
         # decode message
-        Log.debug "Decoding message"
         original_message = decode(msg.body)
 
         # check pbuilder id
-        Log.debug "Checking message for pbuilderid"
         unless check_pbuilderid?(original_message[:pbuilderid])
           Log.debug "Discarding message pbuilder '#{original_message[:pbuilderid]}', not ment for this consumer '#{Arbiter::PBUILDER_ID}'"
           return
