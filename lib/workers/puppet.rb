@@ -17,7 +17,6 @@ module Arbiter
       MODULE_PATH         = "/etc/puppet/modules"
       PUPPET_MODULE_PATH  = "/usr/share/dtk/puppet-modules"
       PUPPET_LOG_TASK     = "/usr/share/dtk/tasks/"
-      PUPPET_LOG_PATH     = "/var/log/puppet/last.log"
 
       include Common::Open3
       include Puppet::DynamicAttributes
@@ -75,7 +74,7 @@ module Arbiter
             temp_run_file.write(execute_string)
             temp_run_file.close
 
-            command_string = "#{cmd} apply #{temp_run_file.path} --debug --modulepath /etc/puppet/modules -l #{PUPPET_LOG_PATH}"
+            command_string = "#{cmd} apply #{temp_run_file.path} --debug --modulepath /etc/puppet/modules"
 
             stdout, stderr, exitstatus, result = Utils::PuppetRunner.execute_cmd_line(command_string)
 
