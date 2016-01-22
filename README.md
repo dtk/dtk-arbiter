@@ -34,8 +34,8 @@ Arbiter uses dotenv gem to setup environment in development mode. File named `.e
     STOMP_PORT=
     STOMP_USERNAME=
     STOMP_PASSWORD=
-    INBOX_TOPIC=mcollective.dtk.reply
-    OUTBOX_TOPIC=mcollective.dtk
+    INBOX_TOPIC=/topic/arbiter.dtk
+    OUTBOX_QUEUE=/queue/arbiter.reply
 
 This would be template for `.env` file needed in DTK Arbiter folder.
 

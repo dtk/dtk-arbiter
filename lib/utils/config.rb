@@ -9,7 +9,7 @@ module Arbiter
 
       include Singleton
 
-      attr_accessor :stomp_url, :stomp_port, :stomp_username, :stomp_password, :inbox_topic, :outbox_topic, :private_key
+      attr_accessor :stomp_url, :stomp_port, :stomp_username, :stomp_password, :inbox_topic, :outbox_queue, :private_key
 
       def initialize
         config = load_mcollective_configuration
@@ -18,9 +18,8 @@ module Arbiter
         @stomp_port = ENV['STOMP_PORT'] || retrieve_config('stomp_port', config)
         @stomp_username = ENV['STOMP_USERNAME'] || retrieve_config('stomp_username', config)
         @stomp_password = ENV['STOMP_PASSWORD'] || retrieve_config('stomp_password', config)
-        @arbiter_topic = retrieve_config('arbiter_topic', config)
-        @inbox_topic = ENV['INBOX_TOPIC'] || "/topic/#{@arbiter_topic}.dtk"
-        @outbox_topic = ENV['OUTBOX_TOPIC'] || "/topic/#{@arbiter_topic}.dtk.reply"
+        @inbox_topic = ENV['INBOX_TOPIC'] || retrieve_config('topic', config)
+        @outbox_queue = ENV['OUTBOX_queue'] || retrieve_config('queue', config)
         @private_key = '/etc/mcollective/ssh/mcollective'
       end
 
@@ -54,8 +53,8 @@ module Arbiter
         instance.inbox_topic
       end
 
-      def self.outbox_topic
-        instance.outbox_topic
+      def self.outbox_queue
+        instance.outbox_queue
       end
 
       def self.private_key
@@ -71,7 +70,7 @@ module Arbiter
           stomp_username: @stomp_username,
           stomp_password: @stomp_password,
           inbox_topic: @inbox_topic,
-          outbox_topic: @outbox_topic,
+          outbox_queue: @outbox_queue,
         }
       end
 

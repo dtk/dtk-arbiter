@@ -107,8 +107,8 @@ module Arbiter
       # remove from thread pull
       @thread_pool.delete(request_id)
 
-      Log.debug("Sending reply to '#{Utils::Config.outbox_topic}': #{message}")
-      send(Utils::Config.outbox_topic, encode(message))
+      Log.debug("Sending reply to '#{Utils::Config.outbox_queue}': #{message}")
+      send(Utils::Config.outbox_queue, encode(message))
     end
 
     ##
@@ -119,7 +119,7 @@ module Arbiter
     def send_hearbeat
       # we do not have sucess
       update({ :status => :succeeded }, 1, false, true)
-      Log.debug "Heatbeat has been sent to '#{Utils::Config.outbox_topic}' for instance '#{Arbiter::PBUILDER_ID}' ..."
+      Log.debug "Heatbeat has been sent to '#{Utils::Config.outbox_queue}' for instance '#{Arbiter::PBUILDER_ID}' ..."
     end
 
   private
