@@ -38,8 +38,6 @@ module Arbiter
         (value && !value.empty?) ? value : nil
       end
 
-      def
-
       def self.full_url
         "stomp://#{stomp_url}:#{stomp_port}"
       end
