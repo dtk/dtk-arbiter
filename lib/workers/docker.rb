@@ -30,7 +30,7 @@ module Arbiter
 
       def process()
         # we need this to pull our modules
-        git_server = Utils::Facts.get!('git-server')
+        git_server = Utils::Config.git_server
 
         # pulling modules and preparing environment for changes
         response = Utils::Git.pull_modules(@version_context, git_server) if @version_context

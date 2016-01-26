@@ -7,7 +7,6 @@ require 'daemons'
 require 'optparse'
 
 require File.expand_path('lib/listener', File.dirname(__FILE__))
-require File.expand_path('lib/utils/facts', File.dirname(__FILE__))
 require File.expand_path('lib/utils/config', File.dirname(__FILE__))
 require File.expand_path('lib/common/logger', File.dirname(__FILE__))
 
@@ -25,13 +24,7 @@ OptionParser.new do |opts|
   end
 end.parse!
 
-# Load FACTS
-facts = Arbiter::Utils::Facts.load_facts
-unless facts['pbuilderid']
-  raise "Not able to retrieve/resolve Pbuilder ID aborting listener ..."
-end
-
-Arbiter::PBUILDER_ID = facts['pbuilderid']
+Arbiter::PBUILDER_ID = Arbiter::Utils::Config.pbuilderid
 
 # DAEMONIZE
 if options[:daemonize]
