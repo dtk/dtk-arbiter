@@ -5,13 +5,15 @@ module Arbiter
   module Utils
     class Config
 
-      DEFAULT_MC_FILE = '/etc/dtk-arbiter.cfg'
+      DEFAULT_ARBITER_CFG = '/etc/dtk/arbiter.cfg'
 
       include Singleton
 
       attr_accessor :stomp_url, :stomp_port, :stomp_username, :stomp_password, :inbox_topic, :outbox_queue, :private_key
 
       def initialize
+        config = load_arbiter_configuration
+
         @stomp_url  = ENV['STOMP_URL'] || retrieve_config('stomp_url', config)
         @stomp_port = ENV['STOMP_PORT'] || retrieve_config('stomp_port', config)
         @stomp_username = ENV['STOMP_USERNAME'] || retrieve_config('stomp_username', config)
@@ -60,6 +62,10 @@ module Arbiter
       end
 
     private
+
+      def load_arbiter_configuration(config_path = DEFAULT_ARBITER_CFG)
+        ParseConfig.new(config_path)
+      end
 
       def config_hash
         {
