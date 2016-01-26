@@ -12,15 +12,13 @@ module Arbiter
       attr_accessor :stomp_url, :stomp_port, :stomp_username, :stomp_password, :inbox_topic, :outbox_queue, :private_key
 
       def initialize
-        config = load_mcollective_configuration
-
         @stomp_url  = ENV['STOMP_URL'] || retrieve_config('stomp_url', config)
         @stomp_port = ENV['STOMP_PORT'] || retrieve_config('stomp_port', config)
         @stomp_username = ENV['STOMP_USERNAME'] || retrieve_config('stomp_username', config)
         @stomp_password = ENV['STOMP_PASSWORD'] || retrieve_config('stomp_password', config)
         @inbox_topic = ENV['INBOX_TOPIC'] || retrieve_config('arbiter_topic', config)
         @outbox_queue = ENV['OUTBOX_queue'] || retrieve_config('arbiter_queue', config)
-        @private_key = '/etc/mcollective/ssh/mcollective'
+        @private_key = '/etc/dtk/ssh/mcollective'
       end
 
       def retrieve_config(key, config)
@@ -72,10 +70,6 @@ module Arbiter
           inbox_topic: @inbox_topic,
           outbox_queue: @outbox_queue,
         }
-      end
-
-      def load_mcollective_configuration(config_path = DEFAULT_MC_FILE)
-        config = ParseConfig.new(config_path)
       end
 
     end
