@@ -95,8 +95,6 @@ module Arbiter
           # this is due to GIT custom againt we are using
           %w{GIT_DIR GIT_INDEX_FILE GIT_WORK_TREE}.each { |var| ENV[var] = nil }
         end
-
-        ret
       end
 
       def self.pull_module(repo_dir,branch,opts={})
