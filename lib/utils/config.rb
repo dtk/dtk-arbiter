@@ -20,7 +20,7 @@ module Arbiter
         @stomp_password = ENV['STOMP_PASSWORD'] || retrieve_config('stomp_password', config)
         @inbox_topic = ENV['INBOX_TOPIC'] || retrieve_config('arbiter_topic', config)
         @outbox_queue = ENV['OUTBOX_queue'] || retrieve_config('arbiter_queue', config)
-        @private_key = '/etc/dtk/ssh/mcollective'
+        @private_key = retrieve_config('private_key', config)
       end
 
       def retrieve_config(key, config)
