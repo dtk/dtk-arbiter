@@ -17,12 +17,6 @@ module Arbiter
         "#{git_url}/#{repo_name}"
       end
 
-      def pull_module(repo_dir, branch, opts={})
-        git_repo = Common::GitClient.new(repo_dir)
-        git_repo.pull_and_checkout_branch?(branch,opts)
-        true
-      end
-
       def self.clean_and_clone_module(repo_dir,remote_repo,branch,opts={})
         FileUtils.rm_rf repo_dir if File.exists?(repo_dir)
         git_repo = Common::GitClient.new(repo_dir, :create => true)
@@ -116,6 +110,11 @@ module Arbiter
         git_repo.clone_branch(remote_repo,branch,opts)
       end
 
+
+      #
+      # Keep in mind that if we are using default format of git url the name of repo is added after ':' symbol.
+      # When using ssh style URL repo name is added after '/'
+      #
       def self.git_repo_full_url(git_url, repo_name)
         "#{git_url}/#{repo_name}"
       end
