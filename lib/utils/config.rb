@@ -95,7 +95,12 @@ module Arbiter
       end
 
       def load_arbiter_configuration(config_path = DEFAULT_ARBITER_CFG)
-        ParseConfig.new(config_path)
+        begin
+          ParseConfig.new(config_path)
+        rescue Exception => e
+          Log.warn("We are having issues reading '#{config_path}', reason: '#{e.message}'. This is expected behavior on node startup, exiting gracefully.")
+          exit(0)
+        end
       end
 
       def config_hash
