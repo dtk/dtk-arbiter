@@ -62,7 +62,7 @@ module Arbiter
 
             unless pull_success
               begin
-                tries ||= 5
+                tries ||= NUMBER_OF_RETRIES
                 clean_and_clone_module(puppet_repo_dir, remote_repo,vc[:branch], opts)
                rescue Exception => e
                 unless (tries -= 1).zero?
@@ -95,8 +95,6 @@ module Arbiter
           # this is due to GIT custom againt we are using
           %w{GIT_DIR GIT_INDEX_FILE GIT_WORK_TREE}.each { |var| ENV[var] = nil }
         end
-
-        ret
       end
 
       def self.pull_module(repo_dir,branch,opts={})
