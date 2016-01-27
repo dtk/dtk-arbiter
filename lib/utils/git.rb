@@ -62,7 +62,7 @@ module Arbiter
 
             unless pull_success
               begin
-                tries ||= 5
+                tries ||= NUMBER_OF_RETRIES
                 clean_and_clone_module(puppet_repo_dir, remote_repo,vc[:branch], opts)
                rescue Exception => e
                 unless (tries -= 1).zero?
