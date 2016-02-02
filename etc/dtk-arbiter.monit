@@ -1,3 +1,4 @@
 check process dtk-arbiter with pidfile /var/run/dtk-arbiter.pid
+  every 2 cycles
   start program = "/etc/init.d/dtk-arbiter start"
   stop program  = "/etc/init.d/dtk-arbiter stop"
