@@ -29,7 +29,7 @@ module Arbiter
 
       def retrieve_config!(key, config)
         value = retrieve_config(key, config)
-        raise "Not able to resolve configuration key '#{key}', does #{DEFAULT_MC_FILE} contain that property?" unless value
+        raise "Not able to resolve configuration key '#{key}', does #{DEFAULT_ARBITER_CFG} contain that property?" unless value
         value
       end
 
