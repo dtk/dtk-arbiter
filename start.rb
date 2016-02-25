@@ -15,7 +15,7 @@ require File.expand_path('lib/common/logger', File.dirname(__FILE__))
 options = {}
 options[:daemonize] = true
 OptionParser.new do |opts|
-  opts.on("-p", "--pid", "Daemon PID file") do |pid|
+  opts.on("-p PIDFILE", "--pid PIDFILE", "Daemon PID file") do |pid|
     options[:pid] = pid
   end
   opts.on("-d", "--development", "Development") do |_x|
