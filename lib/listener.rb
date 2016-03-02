@@ -136,10 +136,9 @@ module Arbiter
     end
 
     def check_pbuilderid?(pbuilderid)
-      # DEBUG SNIPPET >>> REMOVE <<<
-      Log.info "DEBUG TIME we are getting PBUILDER ID: #{pbuilderid}"
-      # this will work on regexp string and regular strings - older version of Regexp does not handle extra // that well
-      regexp = Regexp.compile(pbuilderid.gsub(/[\/]/,''))
+      # this will work on regexp string and regular strings - older version of Regexp does not handle extra / that well
+      # we are removing '/' from begining / end string so that regexp compailes properly
+      regexp = Regexp.compile(pbuilderid.gsub(/(^\/|\/$)/,''))
       !regexp.match(Arbiter::PBUILDER_ID).nil?
     end
 
