@@ -7,11 +7,12 @@ module Arbiter
   module Utils
     class Config
 
-      DEFAULT_ARBITER_CFG = '/etc/dtk/arbiter.cfg'
+      DEFAULT_ARBITER_CFG    = '/etc/dtk/arbiter.cfg'
+      DEFAULT_PULSE_INTERVAL = 300
 
       include Singleton
 
-      attr_accessor :stomp_url, :stomp_port, :stomp_username, :stomp_password, :inbox_topic, :outbox_queue, :private_key, :git_server, :pbuilderid
+      attr_accessor :stomp_url, :stomp_port, :stomp_username, :stomp_password, :inbox_topic, :outbox_queue, :private_key, :git_server, :pbuilderid, :pulse_interval
 
       def initialize
         config = load_arbiter_configuration
@@ -25,6 +26,7 @@ module Arbiter
         @private_key = retrieve_config!('private_key', config)
         @git_server = retrieve_config!('git_server', config)
         @pbuilderid = retrieve_config('pbuilderid', config) || collect_pbuilderid
+        @pulse_interval = retrieve_config('pulse_interval', config) || DEFAULT_PULSE_INTERVAL
       end
 
       def retrieve_config!(key, config)
@@ -78,6 +80,10 @@ module Arbiter
         instance.pbuilderid
       end
 
+      def self.pulse_interval
+        instance.pulse_interval
+      end
+
     private
 
       def collect_pbuilderid
@@ -111,6 +117,7 @@ module Arbiter
           stomp_password: @stomp_password,
           inbox_topic: @inbox_topic,
           outbox_queue: @outbox_queue,
+          pulse_interval: @pulse_interval
         }
       end
 
