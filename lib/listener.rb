@@ -80,6 +80,17 @@ module Arbiter
       end
     end
 
+    def update_pong(request_id)
+      message = {
+        request_id: request_id,
+        pbuilderid: Arbiter::PBUILDER_ID,
+        pong: true
+      }
+
+      Log.debug("Sending pong response to '#{Utils::Config.outbox_queue}'")
+      send(Utils::Config.outbox_queue, encode(message))
+    end
+
     def update(results, request_id, error_response = false, heartbeat = false)
       raise "Param request_id is mandatory" unless request_id
       statuscode = error_response ? 1 : 0
@@ -88,6 +99,7 @@ module Arbiter
       message = {
         requestid: request_id,
         heartbeat:  heartbeat,
+        pong: false,
         pbuilderid: Arbiter::PBUILDER_ID,
         body: {
           request_id: request_id,
