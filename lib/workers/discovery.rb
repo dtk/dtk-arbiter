@@ -8,9 +8,8 @@ module Arbiter
         super(message_content, listener)
       end
 
-      def process()
-        Log.info("Processing ping from the server ...")
-        notify(success_response)
+      def process
+        notify_pong
       end
 
     end
