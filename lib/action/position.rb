@@ -21,8 +21,7 @@ module Arbiter
         @git_url = source_info[:url]
         @branch  = source_info[:ref] || 'master'
         @content = source_info[:content]
-
-        @owner  = command_hash[owner]
+        @owner   = command_hash[owner]
 
         if command_hash[:mode]
           if Utils::Permission.check(command_hash[:mode])
@@ -67,9 +66,6 @@ module Arbiter
         @exited
       end
 
-      #
-      # This are not standard commands and as such we are ignoring their output
-      #
       def started?
         @started
       end
@@ -112,7 +108,7 @@ module Arbiter
       end
 
       def position_in_payload()
-        # write to file
+        # write to file using content from payload
         file = File.open(@target_path, 'w')
         file.write(@content)
 
