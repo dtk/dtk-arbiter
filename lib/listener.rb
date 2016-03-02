@@ -31,6 +31,10 @@ module Arbiter
         Log.debug "Connected to STOMP and subscribed to topic '#{Utils::Config.inbox_topic}'"
         send_hearbeat
 
+        EM.add_periodic_timer(20) do
+          update_pong(1)
+        end
+
       elsif "ERROR".eql?(msg.command)
         # error connecting to stomp
         Log.fatal("Not able to connect to STOMP, reason: #{msg.header['message']}. Stopping listener now ...", nil)
