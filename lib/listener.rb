@@ -85,7 +85,7 @@ module Arbiter
       end
     end
 
-    def update_pong(request_id)
+    def update_pong(request_id = 1)
       message = {
         request_id: request_id,
         pbuilderid: Arbiter::PBUILDER_ID,
