@@ -30,7 +30,7 @@ module Arbiter
     end
 
     def unbind
-      Log.error "Connection to STOMP server #{Utils::Config.full_url} failed, reconnecting in #{Utils::Config.connect_time} seconds ...")
+      Log.error "Connection to STOMP server #{Utils::Config.full_url} failed, reconnecting in #{Utils::Config.connect_time} seconds ..."
 
       if @connect_retries > 0
         EM.add_timer(Utils::Config.connect_time) do
