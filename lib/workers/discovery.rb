@@ -9,7 +9,7 @@ module Arbiter
       end
 
       def process
-        notify_pong
+        notify_heartbeat
       end
 
     end
