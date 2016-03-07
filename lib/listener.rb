@@ -19,9 +19,29 @@ module Arbiter
 
     Log.debug "Initiliazing arbiter"
 
+    def initialize(_params = {})
+      @connection_retries = Utils::Config.connect_retries
+    end
+
     def connection_completed
       connect :login => Utils::Config.stomp_username, :passcode => Utils::Config.stomp_password
       @thread_pool = {}
+      Log.info "Arbiter listener has been successfully started. Listening to #{Utils::Config.full_url} ..."
+    end
+
+    def unbind
+      Log.error("Connection to STOMP server #{Utils::Config.full_url} failed, reconnecting in #{Utils::Config.connect_time} seconds ..."
+
+      if @connect_retries > 0
+        EM.add_timer(Utils::Config.connect_time) do
+          @connect_retries -= 1
+          Log.info("Reconnecting to #{Utils::Config.full_url}, retries left: #{@connect_retries}")
+          reconnect Utils::Config.stomp_url, Utils::Config.stomp_port
+        end
+      else
+        Log.fatal("Not able to connect to STOMP server #{Utils::Config.full_url} after #{Utils::Config.connect_retries}, exiting arbiter ..."
+        exit(1)
+      end
     end
 
     def receive_msg msg
