@@ -27,6 +27,11 @@ module Arbiter
         @listener.update_pong(@request_id)
       end
 
+      def notify_heartbeat(results = {})
+        @listener.update(results, @request_id, false, true)
+      end
+
+
       def notify_of_error(error_message, error_type = :arbiter_error)
         @listener.update([{ error: error_message, time: Time.now.to_s, type: error_type }], @request_id, true)
       end
