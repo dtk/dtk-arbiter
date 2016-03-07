@@ -54,6 +54,9 @@ begin
 
     EM.connect Arbiter::Utils::Config.stomp_url, Arbiter::Utils::Config.stomp_port, Arbiter::Listener
   }
+rescue Arbiter::ArbiterExit => ex
+  Arbiter::Log.error("Exiting arbiter, reason: " + ex.message)
+  exit(1)
 rescue Exception => e
   Arbiter::Log.fatal(e.message, e.backtrace)
   exit(1)

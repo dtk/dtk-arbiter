@@ -26,5 +26,6 @@ module Arbiter
   class NotFound              < ArbiterError; def initialize(content); super(content); @error_type = :not_found; end end
   class NotSupported          < ArbiterError; def initialize(content); super(content); @error_type = :not_supported; end end
   class MissingDynAttributes  < ArbiterError; def initialize(content); super(content); @error_type = :user_error; end end
+  class ArbiterExit           < ArbiterError; def initialize(content); super(content); @error_type = :arbiter_exit; end end
 
 end

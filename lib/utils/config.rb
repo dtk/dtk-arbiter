@@ -55,7 +55,7 @@ module Arbiter
       end
 
       def self.stomp_port
-        instance.stomp_port
+        instance.stomp_port.to_i
       end
 
       def self.stomp_username
