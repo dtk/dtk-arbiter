@@ -1,5 +1,6 @@
 require 'timeout'
 require 'open3'
+require 'iconv'
 
 module Arbiter
   module Common
@@ -91,6 +92,10 @@ module Arbiter
           out_r.close unless out_r.closed?
           err_r.close unless err_r.closed?
         end
+
+        ic = Iconv.new('UTF-8//IGNORE', 'UTF-8')
+        result[:stdout] = ic.iconv(result[:stdout] + ' ')[0..-2]
+        result[:stderr] = ic.iconv(result[:stderr] + ' ')[0..-2]
 
         [result[:stdout], result[:stderr], result[:status], result]
       end
