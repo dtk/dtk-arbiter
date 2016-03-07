@@ -9,10 +9,14 @@ module Arbiter
 
       DEFAULT_ARBITER_CFG    = '/etc/dtk/arbiter.cfg'
       DEFAULT_PULSE_INTERVAL = 300
+      DEFAULT_CONNECT_RETRIES = 5
+      DEFAULT_CONNECT_TIME = 5
 
       include Singleton
 
-      attr_accessor :stomp_url, :stomp_port, :stomp_username, :stomp_password, :inbox_topic, :outbox_queue, :private_key, :git_server, :pbuilderid, :pulse_interval
+      attr_accessor :stomp_url, :stomp_port, :stomp_username, :stomp_password,
+                    :inbox_topic, :outbox_queue, :private_key, :git_server, :pbuilderid, :pulse_interval,
+                    :connect_retries, :connect_time
 
       def initialize
         config = load_arbiter_configuration
@@ -27,6 +31,8 @@ module Arbiter
         @git_server = retrieve_config!('git_server', config)
         @pbuilderid = retrieve_config('pbuilderid', config) || collect_pbuilderid
         @pulse_interval = retrieve_config('pulse_interval', config) || DEFAULT_PULSE_INTERVAL
+        @connect_retries = retrieve_config('connect_retries', config) || DEFAULT_CONNECT_RETRIES
+        @connect_time = retrieve_config('connect_time', config) || DEFAULT_CONNECT_TIME
       end
 
       def retrieve_config!(key, config)
@@ -82,6 +88,14 @@ module Arbiter
 
       def self.pulse_interval
         instance.pulse_interval
+      end
+
+      def self.connect_retries
+        instance.connect_retries
+      end
+
+      def self.connect_time
+        instance.connect_time
       end
 
     private
