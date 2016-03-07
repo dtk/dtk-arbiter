@@ -41,8 +41,14 @@ module Arbiter
         Log.fatal("Not able to connect to STOMP, reason: #{msg.header['message']}. Stopping listener now ...", nil)
         exit(1)
       else
-        # decode message
-        original_message = decode(msg.body)
+        begin
+          # decode message
+          original_message = decode(msg.body)
+        rescue Exception => ex
+          Log.fatal("Error decrypting STOMP message, will have to ignore this message. Error: #{ex.message}")
+          return
+        end
+
 
         # check pbuilder id
         unless check_pbuilderid?(original_message[:pbuilderid])
@@ -124,8 +130,15 @@ module Arbiter
       # remove from thread pull
       @thread_pool.delete(request_id)
 
+      begin
+        encoded_message = encode(message)
+      rescue Exception => ex
+        Log.fatal("Error encrypting STOMP message, will have to ignore this message. Error: #{ex.message}")
+        return
+      end
+
       Log.debug("Sending reply to '#{Utils::Config.outbox_queue}': #{message}")
-      send(Utils::Config.outbox_queue, encode(message))
+      send(Utils::Config.outbox_queue, encoded_message)
     end
 
     ##
@@ -164,16 +177,16 @@ module Arbiter
       Marshal.dump({ :payload => encrypted_message, :ekey => ekey, :esecret => esecret })
     end
 
-    def cancel_worker(request_id)
-      @thread_pool[request_id].kill
-      @thread_pool.delete(request_id)
-    end
-
     def decode(message)
       encrypted_message = Marshal.load(message)
 
       decoded_message = Utils::SSHCipher.decrypt_sensitive(encrypted_message[:payload], encrypted_message[:ekey], encrypted_message[:esecret])
       decoded_message
+    end
+
+    def cancel_worker(request_id)
+      @thread_pool[request_id].kill
+      @thread_pool.delete(request_id)
     end
 
     def worker_factory(message)
