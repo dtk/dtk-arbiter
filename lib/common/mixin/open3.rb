@@ -92,8 +92,8 @@ module Arbiter
           err_r.close unless err_r.closed?
         end
 
-        result[:stdout] = result[:stdout].encode("UTF-8", :invalid => :replace, :undef => :replace, :replace => "?")
-        result[:stderr] = result[:stderr].encode("UTF-8", :invalid => :replace, :undef => :replace, :replace => "?")
+        result[:stdout] = result[:stdout].encode("UTF-8", :invalid => :replace, :undef => :replace, :replace => "?") if result[:stdout]
+        result[:stderr] = result[:stderr].encode("UTF-8", :invalid => :replace, :undef => :replace, :replace => "?") if result[:stderr]
 
         [result[:stdout], result[:stderr], result[:status], result]
       end
