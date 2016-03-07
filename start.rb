@@ -50,7 +50,7 @@ begin
     Signal.trap('INT')  { EM.stop }
     Signal.trap('TERM') { EM.stop }
 
-    Arbiter::Log.debug "Starting Arbiter(EventMachine) listener, connecting to #{Utils::Config.full_url} ..."
+    Arbiter::Log.debug "Starting Arbiter(EventMachine) listener, connecting to #{Arbiter::Utils::Config.full_url} ..."
 
     EM.connect Arbiter::Utils::Config.stomp_url, Arbiter::Utils::Config.stomp_port, Arbiter::Listener
   }
