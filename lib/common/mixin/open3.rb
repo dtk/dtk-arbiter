@@ -92,8 +92,8 @@ module Arbiter
           err_r.close unless err_r.closed?
         end
 
-        result[:stdout] = result[:stdout].gsub(/\e\[([;\d]+)m/, '') if result[:stdout]
-        result[:stderr] = result[:stderr].gsub(/\e\[([;\d]+)m/, '') if result[:stderr]
+        result[:stdout] = result[:stdout].gsub(/\e\[([;\d]+)?m/, '') if result[:stdout]
+        result[:stderr] = result[:stderr].gsub(/\e\[([;\d]+)?m/, '') if result[:stderr]
 
         [result[:stdout], result[:stderr], result[:status], result]
       end
