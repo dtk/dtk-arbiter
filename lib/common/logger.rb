@@ -46,9 +46,9 @@ module Arbiter
       self.instance.error_msgs << { :message => msg, :backtrace => backtrace }
     end
 
-    def self.fatal(msg, backtrace)
+    def self.fatal(msg, backtrace = nil)
       self.instance.logger.fatal(msg)
-      self.instance.logger.fatal(backtrace)
+      self.instance.logger.fatal(backtrace) if backtrace
     end
 
     def self.log_results(params_in, results, agent_name, action_name, top_task_id, task_id, worker_name)

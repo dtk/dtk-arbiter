@@ -50,11 +50,13 @@ begin
     Signal.trap('INT')  { EM.stop }
     Signal.trap('TERM') { EM.stop }
 
-    Arbiter::Log.debug "Starting Arbiter(EventMachine) listener ..."
+    Arbiter::Log.debug "Starting Arbiter(EventMachine) listener, connecting to #{Arbiter::Utils::Config.full_url} ..."
 
     EM.connect Arbiter::Utils::Config.stomp_url, Arbiter::Utils::Config.stomp_port, Arbiter::Listener
-    Arbiter::Log.info "Arbiter listener has been successfully started. Listening to #{Arbiter::Utils::Config.full_url} ..."
   }
+rescue Arbiter::ArbiterExit => ex
+  Arbiter::Log.error("Exiting arbiter, reason: " + ex.message)
+  exit(1)
 rescue Exception => e
   Arbiter::Log.fatal(e.message, e.backtrace)
   exit(1)

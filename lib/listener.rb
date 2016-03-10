@@ -22,6 +22,24 @@ module Arbiter
     def connection_completed
       connect :login => Utils::Config.stomp_username, :passcode => Utils::Config.stomp_password
       @thread_pool = {}
+      Log.info "Arbiter listener has been successfully started. Listening to #{Utils::Config.full_url} ..."
+    end
+
+    def unbind
+      Log.error "Connection to STOMP server #{Utils::Config.full_url} failed, reconnecting in #{Utils::Config.connect_time} seconds ..."
+
+      @connect_retries ||= Utils::Config.connect_retries
+
+      if @connect_retries > 0
+        EM.add_timer(Utils::Config.connect_time) do
+          @connect_retries -= 1
+          Log.info "Reconnecting to #{Utils::Config.full_url}, retries left: #{@connect_retries}"
+          reconnect Utils::Config.stomp_url, Utils::Config.stomp_port
+        end
+      else
+        Log.fatal "Not able to connect to STOMP server #{Utils::Config.full_url} after #{Utils::Config.connect_retries}, exiting arbiter ..."
+        raise ArbiterExit , "Not able to connect to STOMP server #{Utils::Config.full_url}"
+      end
     end
 
     def receive_msg msg
@@ -31,13 +49,24 @@ module Arbiter
         Log.debug "Connected to STOMP and subscribed to topic '#{Utils::Config.inbox_topic}'"
         send_hearbeat
 
+        EM.add_periodic_timer(Utils::Config.pulse_interval) do
+          # send pulse message to keep STOMP connection alive
+          update_pong
+        end
+        Log.info "Activated pulse interval, connection to STOMP is refreshed every #{Utils::Config.pulse_interval} seconds."
       elsif "ERROR".eql?(msg.command)
         # error connecting to stomp
         Log.fatal("Not able to connect to STOMP, reason: #{msg.header['message']}. Stopping listener now ...", nil)
         exit(1)
       else
-        # decode message
-        original_message = decode(msg.body)
+        begin
+          # decode message
+          original_message = decode(msg.body)
+        rescue Exception => ex
+          Log.fatal("Error decrypting STOMP message, will have to ignore this message. Error: #{ex.message}")
+          return
+        end
+
 
         # check pbuilder id
         unless check_pbuilderid?(original_message[:pbuilderid])
@@ -80,6 +109,17 @@ module Arbiter
       end
     end
 
+    def update_pong(request_id = 1)
+      message = {
+        request_id: request_id,
+        pbuilderid: Arbiter::PBUILDER_ID,
+        pong: true
+      }
+
+      Log.debug("Sending pong response to '#{Utils::Config.outbox_queue}'")
+      send(Utils::Config.outbox_queue, encode(message))
+    end
+
     def update(results, request_id, error_response = false, heartbeat = false)
       raise "Param request_id is mandatory" unless request_id
       statuscode = error_response ? 1 : 0
@@ -88,6 +128,7 @@ module Arbiter
       message = {
         requestid: request_id,
         heartbeat:  heartbeat,
+        pong: false,
         pbuilderid: Arbiter::PBUILDER_ID,
         body: {
           request_id: request_id,
@@ -107,8 +148,15 @@ module Arbiter
       # remove from thread pull
       @thread_pool.delete(request_id)
 
+      begin
+        encoded_message = encode(message)
+      rescue Exception => ex
+        Log.fatal("Error encrypting STOMP message, will have to ignore this message. Error: #{ex.message}")
+        return
+      end
+
       Log.debug("Sending reply to '#{Utils::Config.outbox_queue}': #{message}")
-      send(Utils::Config.outbox_queue, encode(message))
+      send(Utils::Config.outbox_queue, encoded_message)
     end
 
     ##
@@ -136,8 +184,9 @@ module Arbiter
     end
 
     def check_pbuilderid?(pbuilderid)
-      # this will work on regexp string and regular strings - older version of Regexp does not handle extra // that well
-      regexp = Regexp.compile(pbuilderid.gsub(/[\/]/,''))
+      # this will work on regexp string and regular strings - older version of Regexp does not handle extra / that well
+      # we are removing '/' from begining / end string so that regexp compailes properly
+      regexp = Regexp.compile(pbuilderid.gsub(/(^\/|\/$)/,''))
       !regexp.match(Arbiter::PBUILDER_ID).nil?
     end
 
@@ -146,16 +195,16 @@ module Arbiter
       Marshal.dump({ :payload => encrypted_message, :ekey => ekey, :esecret => esecret })
     end
 
-    def cancel_worker(request_id)
-      @thread_pool[request_id].kill
-      @thread_pool.delete(request_id)
-    end
-
     def decode(message)
       encrypted_message = Marshal.load(message)
 
       decoded_message = Utils::SSHCipher.decrypt_sensitive(encrypted_message[:payload], encrypted_message[:ekey], encrypted_message[:esecret])
       decoded_message
+    end
+
+    def cancel_worker(request_id)
+      @thread_pool[request_id].kill
+      @thread_pool.delete(request_id)
     end
 
     def worker_factory(message)

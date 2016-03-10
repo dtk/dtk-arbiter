@@ -7,11 +7,16 @@ module Arbiter
   module Utils
     class Config
 
-      DEFAULT_ARBITER_CFG = '/etc/dtk/arbiter.cfg'
+      DEFAULT_ARBITER_CFG    = '/etc/dtk/arbiter.cfg'
+      DEFAULT_PULSE_INTERVAL = 300
+      DEFAULT_CONNECT_RETRIES = 5
+      DEFAULT_CONNECT_TIME = 5
 
       include Singleton
 
-      attr_accessor :stomp_url, :stomp_port, :stomp_username, :stomp_password, :inbox_topic, :outbox_queue, :private_key, :git_server, :pbuilderid
+      attr_accessor :stomp_url, :stomp_port, :stomp_username, :stomp_password,
+                    :inbox_topic, :outbox_queue, :private_key, :git_server, :pbuilderid, :pulse_interval,
+                    :connect_retries, :connect_time
 
       def initialize
         config = load_arbiter_configuration
@@ -25,11 +30,14 @@ module Arbiter
         @private_key = retrieve_config!('private_key', config)
         @git_server = retrieve_config!('git_server', config)
         @pbuilderid = retrieve_config('pbuilderid', config) || collect_pbuilderid
+        @pulse_interval = retrieve_config('pulse_interval', config) || DEFAULT_PULSE_INTERVAL
+        @connect_retries = retrieve_config('connect_retries', config) || DEFAULT_CONNECT_RETRIES
+        @connect_time = retrieve_config('connect_time', config) || DEFAULT_CONNECT_TIME
       end
 
       def retrieve_config!(key, config)
         value = retrieve_config(key, config)
-        raise "Not able to resolve configuration key '#{key}', does #{DEFAULT_MC_FILE} contain that property?" unless value
+        raise "Not able to resolve configuration key '#{key}', does #{DEFAULT_ARBITER_CFG} contain that property?" unless value
         value
       end
 
@@ -47,7 +55,7 @@ module Arbiter
       end
 
       def self.stomp_port
-        instance.stomp_port
+        instance.stomp_port.to_i
       end
 
       def self.stomp_username
@@ -76,6 +84,18 @@ module Arbiter
 
       def self.pbuilderid
         instance.pbuilderid
+      end
+
+      def self.pulse_interval
+        instance.pulse_interval
+      end
+
+      def self.connect_retries
+        instance.connect_retries
+      end
+
+      def self.connect_time
+        instance.connect_time
       end
 
     private
@@ -111,6 +131,7 @@ module Arbiter
           stomp_password: @stomp_password,
           inbox_topic: @inbox_topic,
           outbox_queue: @outbox_queue,
+          pulse_interval: @pulse_interval
         }
       end
 
