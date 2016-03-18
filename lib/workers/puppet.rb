@@ -17,6 +17,8 @@ module Arbiter
       MODULE_PATH         = "/etc/puppet/modules"
       PUPPET_MODULE_PATH  = "/usr/share/dtk/puppet-modules"
       PUPPET_LOG_TASK     = "/usr/share/dtk/tasks/"
+      YUM_LOCK_FILE       = "/var/run/yum.pid"
+      YUM_WAIT_PERIOD     = 10
 
       include Common::Open3
       include Puppet::DynamicAttributes
@@ -63,6 +65,9 @@ module Arbiter
 
         temp_run_file = Tempfile.new('puppet.pp')
         stdout, stderr, exitstatus = nil
+
+        # lets wait for other yum system processes to finish
+        wait_for_yum_lock_release
 
         begin
           node_manifest.each_with_index do |puppet_manifest, i|
@@ -126,6 +131,32 @@ module Arbiter
       end
 
     private
+
+      def wait_for_yum_lock_release
+        if File.exists?(YUM_LOCK_FILE)
+          pid = File.read(YUM_LOCK_FILE)
+          pid = (pid||'').strip.to_i
+          if process_exists?(pid)
+            Log.info("Puppet execution is waiting for YUM process (#{pid}) to finish")
+            while process_exists?(pid) do
+              sleep(YUM_WAIT_PERIOD)
+            end
+            Log.info("Puppet execution is resuming operation since YUM process has finished!")
+          end
+        end
+      end
+
+      def process_exists?(pid)
+        begin
+          Process.kill(0, pid)
+        rescue Errno::ESRCH
+          return false
+        rescue Errno::EPERM
+          return true
+        else
+          return true
+        end
+      end
 
       def add_imported_collection(cmp_name,attr_name,val,context={})
         p = (Thread.current[:imported_collections] ||= Hash.new)[cmp_name] ||= Hash.new
