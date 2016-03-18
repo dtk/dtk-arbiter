@@ -141,7 +141,10 @@ module Arbiter
             while process_exists?(pid) do
               sleep(YUM_WAIT_PERIOD)
             end
-            Log.info("Puppet execution is resuming operation since YUM process has finished!")
+            Log.info("Puppet execution is resuming operation since YUM process has finished! Waiting another #{YUM_WAIT_PERIOD} to check if another YUM process starts")
+            # this is temp solution to check if another yum process
+            sleep YUM_WAIT_PERIOD
+            wait_for_yum_lock_releases
           end
         end
       end
@@ -167,7 +170,7 @@ module Arbiter
         ret = Array.new
         @import_statement_modules = Array.new
         cmps_with_attrs.each_with_index do |cmp_with_attrs,i|
-          stage = i+1
+          stage = i + 1
           module_name = cmp_with_attrs["module_name"]
           ret << "stage{#{quote_form(stage)} :}"
           attrs = process_and_return_attr_name_val_pairs(cmp_with_attrs)
