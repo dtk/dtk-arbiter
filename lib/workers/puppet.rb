@@ -144,7 +144,7 @@ module Arbiter
             Log.info("Puppet execution is resuming operation since YUM process has finished! Waiting another #{YUM_WAIT_PERIOD} to check if another YUM process starts")
             # this is temp solution to check if another yum process
             sleep YUM_WAIT_PERIOD
-            wait_for_yum_lock_releases
+            wait_for_yum_lock_release
           end
         end
       end
