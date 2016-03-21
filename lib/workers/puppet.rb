@@ -19,6 +19,7 @@ module Arbiter
       PUPPET_LOG_TASK     = "/usr/share/dtk/tasks/"
       YUM_LOCK_FILE       = "/var/run/yum.pid"
       YUM_WAIT_PERIOD     = 10
+      YUM_GRACE_PERIOD    = 150
 
       include Common::Open3
       include Puppet::DynamicAttributes
@@ -142,8 +143,8 @@ module Arbiter
               sleep(YUM_WAIT_PERIOD)
             end
             Log.info("Puppet execution is resuming operation since YUM process has finished! Waiting another #{YUM_WAIT_PERIOD} to check if another YUM process starts")
-            # this is temp solution to check if another yum process
-            sleep 150
+            # for amazon instances we need to wait cca. 150 seconds for all yum processes to finish
+            sleep(YUM_GRACE_PERIOD)
             wait_for_yum_lock_release
           end
         end
