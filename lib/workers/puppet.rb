@@ -19,7 +19,7 @@ module Arbiter
       PUPPET_LOG_TASK     = "/usr/share/dtk/tasks/"
       YUM_LOCK_FILE       = "/var/run/yum.pid"
       YUM_WAIT_PERIOD     = 10
-      YUM_GRACE_PERIOD    = 150
+      YUM_GRACE_PERIOD    = 180
 
       include Common::Open3
       include Puppet::DynamicAttributes
