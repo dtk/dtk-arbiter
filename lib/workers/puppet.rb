@@ -133,7 +133,7 @@ module Arbiter
 
     private
 
-      def wait_for_yum_lock_release(wait_grace_period = true)
+      def wait_for_yum_lock_release(first_grace_period_wait = true)
         Log.info("Run Level output: #{run_level}")
 
         if File.exists?(YUM_LOCK_FILE)
@@ -144,9 +144,13 @@ module Arbiter
             while process_exists?(pid) do
               sleep(YUM_WAIT_PERIOD)
             end
-            Log.info("Puppet execution is resuming operation since YUM process has finished! Waiting another #{YUM_GRACE_PERIOD} to check if another YUM process starts")
+
+            grace_period_wait = first_grace_period_wait ? YUM_GRACE_PERIOD : (YUM_GRACE_PERIOD / 2)
+
+            Log.info("Puppet execution is resuming operation since YUM process has finished! Waiting another #{grace_period_wait} to check if another YUM process starts")
             # for amazon instances we need to wait cca. 150 seconds for all yum processes to finish
-            sleep(YUM_GRACE_PERIOD) if wait_grace_period
+            sleep(grace_period_wait)
+
             wait_for_yum_lock_release(false)
           end
         end
