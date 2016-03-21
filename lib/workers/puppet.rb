@@ -70,6 +70,8 @@ module Arbiter
         # lets wait for other yum system processes to finish
         wait_for_yum_lock_release
 
+        log_processes_to_file
+
         begin
           node_manifest.each_with_index do |puppet_manifest, i|
             execute_lines = puppet_manifest || ret_execute_lines(cmps_with_attrs)
@@ -134,7 +136,7 @@ module Arbiter
     private
 
       def wait_for_yum_lock_release(first_grace_period_wait = true)
-        Log.info("Run Level output: #{run_level}")
+        log_processes_to_file
 
         if File.exists?(YUM_LOCK_FILE)
           pid = File.read(YUM_LOCK_FILE)
@@ -148,6 +150,7 @@ module Arbiter
             grace_period_wait = first_grace_period_wait ? YUM_GRACE_PERIOD : (YUM_GRACE_PERIOD / 2)
 
             Log.info("Puppet execution is resuming operation since YUM process has finished! Waiting another #{grace_period_wait} to check if another YUM process starts")
+            log_processes_to_file
             # for amazon instances we need to wait cca. 150 seconds for all yum processes to finish
             sleep(grace_period_wait)
 
@@ -156,8 +159,9 @@ module Arbiter
         end
       end
 
-      def run_level
-        `runlevel`
+      def log_processes_to_file
+        output = `ps -A --forest`
+        Log.log_to_file("process_tree_#{Time.now.to_i}", output)
       end
 
       def process_exists?(pid)
