@@ -19,7 +19,7 @@ module Arbiter
       PUPPET_LOG_TASK     = "/usr/share/dtk/tasks/"
       YUM_LOCK_FILE       = "/var/run/yum.pid"
       YUM_WAIT_PERIOD     = 10
-      YUM_GRACE_PERIOD    = 240
+      YUM_GRACE_PERIOD    = 300
 
       include Common::Open3
       include Puppet::DynamicAttributes
@@ -67,14 +67,8 @@ module Arbiter
         temp_run_file = Tempfile.new('puppet.pp')
         stdout, stderr, exitstatus = nil
 
-        Log.info("FIRST! Run Level output: #{run_level}")
-
         # lets wait for other yum system processes to finish
         wait_for_yum_lock_release
-
-
-        Log.info("LAST! Run Level output: #{run_level}")
-
 
         begin
           node_manifest.each_with_index do |puppet_manifest, i|
@@ -149,9 +143,8 @@ module Arbiter
             Log.info("Puppet execution is waiting for YUM process (#{pid}) to finish")
             while process_exists?(pid) do
               sleep(YUM_WAIT_PERIOD)
-              Log.info("Run Level output: #{run_level}")
             end
-            Log.info("Puppet execution is resuming operation since YUM process has finished! Waiting another #{YUM_WAIT_PERIOD} to check if another YUM process starts")
+            Log.info("Puppet execution is resuming operation since YUM process has finished! Waiting another #{YUM_GRACE_PERIOD} to check if another YUM process starts")
             # for amazon instances we need to wait cca. 150 seconds for all yum processes to finish
             sleep(YUM_GRACE_PERIOD) if wait_grace_period
             wait_for_yum_lock_release(false)
