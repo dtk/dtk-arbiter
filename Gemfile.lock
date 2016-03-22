@@ -40,6 +40,7 @@ GEM
       json_pure
       rgen (~> 0.6.5)
     rgen (0.6.5)
+    sys-proctable (1.0.0)
 
 PLATFORMS
   ruby
@@ -58,6 +59,4 @@ DEPENDENCIES
   looksee
   parseconfig
   puppet
-
-BUNDLED WITH
-   1.10.6
+  sys-proctable

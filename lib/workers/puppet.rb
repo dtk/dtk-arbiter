@@ -1,5 +1,6 @@
 require 'fileutils'
 require 'tempfile'
+require 'sys/proctable'
 
 require File.expand_path('../../common/gitclient', __FILE__)
 require File.expand_path('../../utils/puppet_runner', __FILE__)
@@ -17,9 +18,7 @@ module Arbiter
       MODULE_PATH         = "/etc/puppet/modules"
       PUPPET_MODULE_PATH  = "/usr/share/dtk/puppet-modules"
       PUPPET_LOG_TASK     = "/usr/share/dtk/tasks/"
-      YUM_LOCK_FILE       = "/var/run/yum.pid"
-      YUM_WAIT_PERIOD     = 10
-      YUM_GRACE_PERIOD    = 300
+      WAIT_CONFIG_PS      = 10
 
       include Common::Open3
       include Puppet::DynamicAttributes
@@ -68,9 +67,7 @@ module Arbiter
         stdout, stderr, exitstatus = nil
 
         # lets wait for other yum system processes to finish
-        wait_for_yum_lock_release
-
-        log_processes_to_file
+        check_and_wait_node_initiation
 
         begin
           node_manifest.each_with_index do |puppet_manifest, i|
@@ -135,27 +132,18 @@ module Arbiter
 
     private
 
-      def wait_for_yum_lock_release(first_grace_period_wait = true)
-        log_processes_to_file
-
-        if File.exists?(YUM_LOCK_FILE)
-          pid = File.read(YUM_LOCK_FILE)
-          pid = (pid||'').strip.to_i
-          if process_exists?(pid)
-            Log.info("Puppet execution is waiting for YUM process (#{pid}) to finish")
-            while process_exists?(pid) do
-              sleep(YUM_WAIT_PERIOD)
-            end
-
-            grace_period_wait = first_grace_period_wait ? YUM_GRACE_PERIOD : (YUM_GRACE_PERIOD / 2)
-
-            Log.info("Puppet execution is resuming operation since YUM process has finished! Waiting another #{grace_period_wait} to check if another YUM process starts")
-            log_processes_to_file
-            # for amazon instances we need to wait cca. 150 seconds for all yum processes to finish
-            sleep(grace_period_wait)
-
-            wait_for_yum_lock_release(false)
+      ##
+      # On amazon linux instances there is a process S52cloud-config, this process uses yum and as such has to end before we can start puppet apply.
+      # Following code finds that process and waits for it to finish
+      #
+      def check_and_wait_node_initiation
+        cloud_config_ps = Sys::ProcTable.ps.select { |process| process.comm.match(/S\d+cloud\-config/) }
+        cloud_config_ps.each do |cc_ps|
+          Log.info("Cloud config process detected! Process (#{cc_ps.pid}) #{cc_ps.comm} is in state '#{cc_ps.state}', waiting for it to finish ...")
+          while Sys::ProcTable.ps(cc_ps.pid) do
+            sleep(WAIT_CONFIG_PS)
           end
+          Log.info("Cloud config process has finished! Resuming puppet apply ...")
         end
       end
 
