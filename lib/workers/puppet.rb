@@ -82,9 +82,7 @@ module Arbiter
 
             command_string = "#{cmd} apply #{temp_run_file.path} --debug --modulepath /etc/puppet/modules"
 
-            log_processes_to_file
             stdout, stderr, exitstatus, result = Utils::PuppetRunner.execute_cmd_line(command_string)
-            log_processes_to_file
 
             unless exitstatus == 0
               raise ActionAbort, "Not able to execute puppet code, exitstatus: #{exitstatus}, error: #{stderr}"
@@ -102,6 +100,7 @@ module Arbiter
             return response
           end
         ensure
+          log_processes_to_file
           # we log everything
           log_dir          = File.join(PUPPET_LOG_TASK, get(:service_name), "task_id_#{get(:task_id)}")
           last_task_dir    = File.join(PUPPET_LOG_TASK, 'last-task')
@@ -140,10 +139,8 @@ module Arbiter
       # Following code finds that process and waits for it to finish
       #
       def check_and_wait_node_initialization
-        cloud_config_ps = Sys::ProcTable.ps.select { |process| process.comm.match(/(S\d+cloud\-config)|(update\-motd)/) }
+        cloud_config_ps = Sys::ProcTable.ps.select { |process| process.comm.match(/(S\d+cloud\-config)|(update\-motd)|(^rc$)/) }
         cloud_init_detected = false
-
-        log_processes_to_file
 
         cloud_config_ps.each do |cc_ps|
           cloud_init_detected = true
@@ -154,10 +151,14 @@ module Arbiter
           Log.info("Cloud config process has finished! Resuming puppet apply ...")
         end
 
-        log_processes_to_file
+        if cloud_config_ps.empty?
+          Log.info("Cloud config no processes detected, moving on!")
+          log_processes_to_file
+        end
 
         if cloud_init_detected
           sleep(120)
+          Log.info("Cloud config additional wait ...")
           check_and_wait_node_initialization
         end
 
