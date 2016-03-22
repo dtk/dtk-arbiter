@@ -18,7 +18,9 @@ module Arbiter
       MODULE_PATH         = "/etc/puppet/modules"
       PUPPET_MODULE_PATH  = "/usr/share/dtk/puppet-modules"
       PUPPET_LOG_TASK     = "/usr/share/dtk/tasks/"
-      WAIT_CONFIG_PS      = 10
+      WAIT_PS_END         = 10
+      YUM_LOCK_FILE       = "/var/run/yum.pid"
+      YUM_LOCK_RETRIES    = 3
 
       include Common::Open3
       include Puppet::DynamicAttributes
@@ -82,10 +84,25 @@ module Arbiter
 
             command_string = "#{cmd} apply #{temp_run_file.path} --debug --modulepath /etc/puppet/modules"
 
-            stdout, stderr, exitstatus, result = Utils::PuppetRunner.execute_cmd_line(command_string)
+            yum_lock_retries = YUM_LOCK_RETRIES
 
-            unless exitstatus == 0
-              raise ActionAbort, "Not able to execute puppet code, exitstatus: #{exitstatus}, error: #{stderr}"
+            begin
+              stdout, stderr, exitstatus, result = Utils::PuppetRunner.execute_cmd_line(command_string)
+
+              unless exitstatus == 0
+                # we check if there is yum lock
+                if yum_lock_retries != 0 && (stderr||'').include?(YUM_LOCK_FILE)
+                  raise YumLock, "Yum lock has been detected!"
+                end
+
+                raise ActionAbort, "Not able to execute puppet code, exitstatus: #{exitstatus}, error: #{stderr}"
+              end
+            rescue YumLock => e
+              # we wait for YUM process to finish and than we try again
+              Log.warn("YUM Lock has been detected, initiating wait sequence for running YUM process.")
+              wait_for_yum_lock_release
+              yum_lock_retries -= 1
+              retry
             end
 
             response = {}
@@ -145,23 +162,27 @@ module Arbiter
         cloud_config_ps.each do |cc_ps|
           cloud_init_detected = true
           Log.info("Cloud config process detected! Process (#{cc_ps.pid}) #{cc_ps.comm} is in state '#{cc_ps.state}', waiting for it to finish ...")
-          while Sys::ProcTable.ps(cc_ps.pid) do
-            sleep(WAIT_CONFIG_PS)
+          while process_exists?(cc_ps.pid) do
+            sleep(WAIT_PS_END)
           end
           Log.info("Cloud config process has finished! Resuming puppet apply ...")
         end
+      end
 
-        if cloud_config_ps.empty?
-          Log.info("Cloud config no processes detected, moving on!")
-          log_processes_to_file
+      def wait_for_yum_lock_release
+        if File.exists?(YUM_LOCK_FILE)
+          pid = File.read(YUM_LOCK_FILE)
+          pid = (pid||'').strip.to_i
+
+          Log.info("Puppet execution is waiting for YUM process (#{pid}) to finish")
+          while process_exists?(pid) do
+            sleep(WAIT_PS_END)
+          end
+          Log.info("Puppet execution is retrying last action, since YUM processed finished")
+          # we make sure that there are not chained YUM processes
+          sleep(WAIT_PS_END)
+          wait_for_yum_lock_release
         end
-
-        if cloud_init_detected
-          sleep(120)
-          Log.info("Cloud config additional wait ...")
-          check_and_wait_node_initialization
-        end
-
       end
 
       def log_processes_to_file
@@ -170,15 +191,7 @@ module Arbiter
       end
 
       def process_exists?(pid)
-        begin
-          Process.kill(0, pid)
-        rescue Errno::ESRCH
-          return false
-        rescue Errno::EPERM
-          return true
-        else
-          return true
-        end
+        Sys::ProcTable.ps(pid)
       end
 
       def add_imported_collection(cmp_name,attr_name,val,context={})
