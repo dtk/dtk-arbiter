@@ -79,9 +79,12 @@ module Arbiter
             temp_run_file.write(execute_string)
             temp_run_file.close
 
+
             command_string = "#{cmd} apply #{temp_run_file.path} --debug --modulepath /etc/puppet/modules"
 
+            log_processes_to_file
             stdout, stderr, exitstatus, result = Utils::PuppetRunner.execute_cmd_line(command_string)
+            log_processes_to_file
 
             unless exitstatus == 0
               raise ActionAbort, "Not able to execute puppet code, exitstatus: #{exitstatus}, error: #{stderr}"
@@ -137,7 +140,7 @@ module Arbiter
       # Following code finds that process and waits for it to finish
       #
       def check_and_wait_node_initialization
-        cloud_config_ps = Sys::ProcTable.ps.select { |process| process.comm.match(/S\d+cloud\-config/) }
+        cloud_config_ps = Sys::ProcTable.ps.select { |process| process.comm.match(/(S\d+cloud\-config)|(update\-motd)/) }
         cloud_init_detected = false
 
         log_processes_to_file
@@ -154,7 +157,7 @@ module Arbiter
         log_processes_to_file
 
         if cloud_init_detected
-          sleep(2 * WAIT_CONFIG_PS)
+          sleep(120)
           check_and_wait_node_initialization
         end
 
