@@ -138,13 +138,26 @@ module Arbiter
       #
       def check_and_wait_node_initialization
         cloud_config_ps = Sys::ProcTable.ps.select { |process| process.comm.match(/S\d+cloud\-config/) }
+        cloud_init_detected = false
+
+        log_processes_to_file
+
         cloud_config_ps.each do |cc_ps|
+          cloud_init_detected = true
           Log.info("Cloud config process detected! Process (#{cc_ps.pid}) #{cc_ps.comm} is in state '#{cc_ps.state}', waiting for it to finish ...")
           while Sys::ProcTable.ps(cc_ps.pid) do
             sleep(WAIT_CONFIG_PS)
           end
           Log.info("Cloud config process has finished! Resuming puppet apply ...")
         end
+
+        log_processes_to_file
+
+        if cloud_init_detected
+          sleep(2 * WAIT_CONFIG_PS)
+          check_and_wait_node_initialization
+        end
+
       end
 
       def log_processes_to_file
