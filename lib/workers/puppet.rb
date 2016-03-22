@@ -179,9 +179,6 @@ module Arbiter
             sleep(WAIT_PS_END)
           end
           Log.info("Puppet execution is retrying last action, since YUM processed finished")
-          # we make sure that there are not chained YUM processes
-          sleep(WAIT_PS_END)
-          wait_for_yum_lock_release
         end
       end
 
