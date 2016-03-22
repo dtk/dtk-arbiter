@@ -67,7 +67,7 @@ module Arbiter
         stdout, stderr, exitstatus = nil
 
         # lets wait for other yum system processes to finish
-        check_and_wait_node_initiation
+        check_and_wait_node_initialization
 
         begin
           node_manifest.each_with_index do |puppet_manifest, i|
@@ -136,7 +136,7 @@ module Arbiter
       # On amazon linux instances there is a process S52cloud-config, this process uses yum and as such has to end before we can start puppet apply.
       # Following code finds that process and waits for it to finish
       #
-      def check_and_wait_node_initiation
+      def check_and_wait_node_initialization
         cloud_config_ps = Sys::ProcTable.ps.select { |process| process.comm.match(/S\d+cloud\-config/) }
         cloud_config_ps.each do |cc_ps|
           Log.info("Cloud config process detected! Process (#{cc_ps.pid}) #{cc_ps.comm} is in state '#{cc_ps.state}', waiting for it to finish ...")
