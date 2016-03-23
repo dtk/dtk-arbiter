@@ -20,7 +20,7 @@ module Arbiter
       PUPPET_LOG_TASK     = "/usr/share/dtk/tasks/"
       WAIT_PS_END         = 10
       YUM_LOCK_FILE       = "/var/run/yum.pid"
-      YUM_LOCK_RETRIES    = 3
+      YUM_LOCK_RETRIES    = 1
 
       include Common::Open3
       include Puppet::DynamicAttributes
