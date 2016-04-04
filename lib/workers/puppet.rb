@@ -117,7 +117,6 @@ module Arbiter
             return response
           end
         ensure
-          log_processes_to_file
           # we log everything
           log_dir          = File.join(PUPPET_LOG_TASK, get(:service_name), "task_id_#{get(:task_id)}")
           last_task_dir    = File.join(PUPPET_LOG_TASK, 'last-task')
