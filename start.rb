@@ -22,6 +22,9 @@ OptionParser.new do |opts|
     options[:daemonize] = false
     options[:development] = true
   end
+  opts.on("-f", "--foreground", "Run in foreground") do |_f|
+    options[:daemonize] = false
+  end
 end.parse!
 
 Arbiter::PBUILDER_ID = Arbiter::Utils::Config.pbuilderid
