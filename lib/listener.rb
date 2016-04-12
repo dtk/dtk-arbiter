@@ -139,7 +139,8 @@ module Arbiter
       message = {
         request_id: request_id,
         pbuilderid: Arbiter::PBUILDER_ID,
-        pong: true
+        pong: true,
+        heartbeat: true
       }
 
       Log.debug("Sending pong response to '#{Utils::Config.outbox_queue}'")
