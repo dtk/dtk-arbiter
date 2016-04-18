@@ -1,5 +1,6 @@
 require 'fileutils'
 require 'tempfile'
+require 'sys/proctable'
 
 require File.expand_path('../../common/gitclient', __FILE__)
 require File.expand_path('../../utils/puppet_runner', __FILE__)
@@ -17,6 +18,9 @@ module Arbiter
       MODULE_PATH         = "/etc/puppet/modules"
       PUPPET_MODULE_PATH  = "/usr/share/dtk/puppet-modules"
       PUPPET_LOG_TASK     = "/usr/share/dtk/tasks/"
+      WAIT_PS_END         = 10
+      YUM_LOCK_FILE       = "/var/run/yum.pid"
+      YUM_LOCK_RETRIES    = 1
 
       include Common::Open3
       include Puppet::DynamicAttributes
@@ -64,6 +68,9 @@ module Arbiter
         temp_run_file = Tempfile.new('puppet.pp')
         stdout, stderr, exitstatus = nil
 
+        # lets wait for other yum system processes to finish
+        check_and_wait_node_initialization
+
         begin
           node_manifest.each_with_index do |puppet_manifest, i|
             execute_lines = puppet_manifest || ret_execute_lines(cmps_with_attrs)
@@ -74,12 +81,28 @@ module Arbiter
             temp_run_file.write(execute_string)
             temp_run_file.close
 
+
             command_string = "#{cmd} apply #{temp_run_file.path} --debug --modulepath /etc/puppet/modules"
 
-            stdout, stderr, exitstatus, result = Utils::PuppetRunner.execute_cmd_line(command_string)
+            yum_lock_retries = YUM_LOCK_RETRIES
 
-            unless exitstatus == 0
-              raise ActionAbort, "Not able to execute puppet code, exitstatus: #{exitstatus}, error: #{stderr}"
+            begin
+              stdout, stderr, exitstatus, result = Utils::PuppetRunner.execute_cmd_line(command_string)
+
+              unless exitstatus == 0
+                # we check if there is yum lock
+                if yum_lock_retries != 0 && (stderr||'').include?(YUM_LOCK_FILE)
+                  raise YumLock, "Yum lock has been detected!"
+                end
+
+                raise ActionAbort, "Not able to execute puppet code, exitstatus: #{exitstatus}, error: #{stderr}"
+              end
+            rescue YumLock => e
+              # we wait for YUM process to finish and than we try again
+              Log.warn("YUM Lock has been detected, initiating wait sequence for running YUM process.")
+              wait_for_yum_lock_release
+              yum_lock_retries -= 1
+              retry
             end
 
             response = {}
@@ -127,6 +150,46 @@ module Arbiter
 
     private
 
+      ##
+      # On amazon linux instances there is a process S52cloud-config, this process uses yum and as such has to end before we can start puppet apply.
+      # Following code finds that process and waits for it to finish
+      #
+      def check_and_wait_node_initialization
+        cloud_config_ps = Sys::ProcTable.ps.select { |process| process.comm.match(/(S\d+cloud\-config)|(update\-motd)|(^rc$)/) }
+        cloud_init_detected = false
+
+        cloud_config_ps.each do |cc_ps|
+          cloud_init_detected = true
+          Log.info("Cloud config process detected! Process (#{cc_ps.pid}) #{cc_ps.comm} is in state '#{cc_ps.state}', waiting for it to finish ...")
+          while process_exists?(cc_ps.pid) do
+            sleep(WAIT_PS_END)
+          end
+          Log.info("Cloud config process has finished! Resuming puppet apply ...")
+        end
+      end
+
+      def wait_for_yum_lock_release
+        if File.exists?(YUM_LOCK_FILE)
+          pid = File.read(YUM_LOCK_FILE)
+          pid = (pid||'').strip.to_i
+
+          Log.info("Puppet execution is waiting for YUM process (#{pid}) to finish")
+          while process_exists?(pid) do
+            sleep(WAIT_PS_END)
+          end
+          Log.info("Puppet execution is retrying last action, since YUM processed finished")
+        end
+      end
+
+      def log_processes_to_file
+        output = `ps -A --forest`
+        Log.log_to_file("process_tree_#{Time.now.to_i}", output)
+      end
+
+      def process_exists?(pid)
+        Sys::ProcTable.ps(pid)
+      end
+
       def add_imported_collection(cmp_name,attr_name,val,context={})
         p = (Thread.current[:imported_collections] ||= Hash.new)[cmp_name] ||= Hash.new
         p[attr_name] = {"value" => val}.merge(context)
@@ -136,7 +199,7 @@ module Arbiter
         ret = Array.new
         @import_statement_modules = Array.new
         cmps_with_attrs.each_with_index do |cmp_with_attrs,i|
-          stage = i+1
+          stage = i + 1
           module_name = cmp_with_attrs["module_name"]
           ret << "stage{#{quote_form(stage)} :}"
           attrs = process_and_return_attr_name_val_pairs(cmp_with_attrs)

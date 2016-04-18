@@ -22,6 +22,8 @@ module Arbiter
     def connection_completed
       connect :login => Utils::Config.stomp_username, :passcode => Utils::Config.stomp_password
       @thread_pool = {}
+      @puppet_apply_running  = false
+      @puppey_apply_queue = []
       Log.info "Arbiter listener has been successfully started. Listening to #{Utils::Config.full_url} ..."
     end
 
@@ -90,30 +92,55 @@ module Arbiter
           return
         end
 
-        Log.info "Arbiter worker has been choosen #{target_instance} with request id #{original_message[:request_id]}, starting work ..."
-
-        # start new EM thread to handle this work
-        EM.defer(proc do
-          begin
-            # register thread for cancel
-            @thread_pool[original_message[:request_id]] = Thread.current
-
-            target_instance.process()
-          rescue ArbiterError => e
-            target_instance.notify_of_error(e.message, e.error_type)
-          rescue Exception => e
-            Log.fatal(e.message, e.backtrace)
-            target_instance.notify_of_error(e.message, :internal)
-          end
-        end)
+        ##
+        # If there is puppet apply running than queue this execution, else just run concurrentl
+        #
+        if target_instance.is_puppet_apply? && @puppet_apply_running
+          Log.info "Arbiter worker has been queued #{target_instance} with request id #{target_instance.request_id}, waiting for execution ..."
+          @puppey_apply_queue.push(target_instance)
+        else
+          Log.info "Arbiter worker has been choosen #{target_instance} with request id #{target_instance.request_id}, starting work ..."
+          run_task_concurrently(target_instance)
+        end
       end
+    end
+
+    def run_task_concurrently(target_instance)
+      # start new EM thread to handle this work
+      EM.defer(proc do
+        begin
+          # register thread for cancel
+          @thread_pool[target_instance.request_id] = Thread.current
+
+          # we lock concurrency for puppet apply
+          @puppet_apply_running = true if target_instance.is_puppet_apply?
+
+          target_instance.process()
+        rescue ArbiterError => e
+          target_instance.notify_of_error(e.message, e.error_type)
+        rescue Exception => e
+          Log.fatal(e.message, e.backtrace)
+          target_instance.notify_of_error(e.message, :internal)
+        ensure
+          # we unluck concurrency and trigger next puppet apply task
+          if target_instance.is_puppet_apply? && @puppet_apply_running
+            @puppet_apply_running = false
+            unless @puppey_apply_queue.empty?
+              queued_instance = @puppey_apply_queue.pop
+              Log.info "Arbiter worker has been un-queued #{queued_instance} with request id #{queued_instance.request_id}, starting work ..."
+              run_task_concurrently(queued_instance)
+            end
+          end
+        end
+      end)
     end
 
     def update_pong(request_id = 1)
       message = {
         request_id: request_id,
         pbuilderid: Arbiter::PBUILDER_ID,
-        pong: true
+        pong: true,
+        heartbeat: true
       }
 
       Log.debug("Sending pong response to '#{Utils::Config.outbox_queue}'")
@@ -203,8 +230,10 @@ module Arbiter
     end
 
     def cancel_worker(request_id)
+      return unless @thread_pool[request_id]
       @thread_pool[request_id].kill
       @thread_pool.delete(request_id)
+      Log.info "Success canceling  worker for request (ID: '#{request_id}')"
     end
 
     def worker_factory(message)
@@ -223,9 +252,9 @@ module Arbiter
           ::Arbiter::Puppet::Worker.new(message, self)
         when 'docker_agent'
           ::Arbiter::Docker::Worker.new(message, self)
-        when 'cancel_agent'
-          Log.info "Sending cancel signal to worker for request (ID: '#{request_id}')"
-          cancel_agent(message[:request_id])
+        when 'cancel_agent', 'puppet_cancel'
+          Log.info "Sending cancel signal to worker for request (ID: '#{message[:request_id]}')"
+          cancel_worker(message[:request_id])
         else
           nil
         end

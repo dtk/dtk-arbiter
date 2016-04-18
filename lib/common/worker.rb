@@ -2,6 +2,8 @@ module Arbiter
   module Common
     class Worker
 
+      attr_reader :request_id
+
       def initialize(message, listener)
         @listener = listener
         @received_message = message
@@ -31,7 +33,6 @@ module Arbiter
         @listener.update(results, @request_id, false, true)
       end
 
-
       def notify_of_error(error_message, error_type = :arbiter_error)
         @listener.update([{ error: error_message, time: Time.now.to_s, type: error_type }], @request_id, true)
       end
@@ -46,6 +47,14 @@ module Arbiter
 
       def action_name
         @action_name ? @action_name.downcase.to_sym : nil
+      end
+
+      def agent_name
+        @agent_name.to_sym
+      end
+
+      def is_puppet_apply?
+        (:puppet_apply == agent_name)
       end
 
     protected
