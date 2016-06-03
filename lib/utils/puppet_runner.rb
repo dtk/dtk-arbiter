@@ -38,7 +38,9 @@ module Arbiter
         cmd = "#{PUPPET_RUNNABLE} apply -e \"#{puppet_definition} #{resource_str}\""
         Log.debug("Puppet Runner executing: #{cmd}")
 
-        stdout, stderr, status, result = capture3_with_timeout(cmd)
+        Bundler.with_clean_env do
+          stdout, stderr, status, result = capture3_with_timeout(cmd)
+        end
 
         # 0 should be last output if success, since that is the exit code we want
         unless status == 0
