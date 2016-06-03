@@ -9,7 +9,6 @@ gem 'daemons'
 gem 'parseconfig'
 gem 'docker-api'
 gem 'grit'
-gem 'puppet'
 gem 'sys-proctable'
 
 group :development do
