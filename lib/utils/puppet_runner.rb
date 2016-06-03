@@ -1,4 +1,5 @@
-require 'puppet'
+# removing since it's not actually used
+# require 'puppet'
 
 module Arbiter
   module Utils
