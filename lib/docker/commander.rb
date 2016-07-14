@@ -1,4 +1,5 @@
 require 'docker'
+require 'digest/sha1'
 
 module Arbiter
   module Docker
@@ -12,6 +13,8 @@ module Arbiter
         @dockerfile = dockerfile
         @puppet_manifest = puppet_manifest
         @execution_type = execution_type
+        @docker_image_tag = Digest::SHA1.hexdigest @dockerfile if @dockerfile
+        @docker_image_final = @docker_image_tag || @docker_image
 
         unless @dockerfile
           Log.info "Getting docker image '#{docker_image}', this may take a while"
@@ -20,9 +23,9 @@ module Arbiter
 
          # build required docker image if requested
         if @dockerfile
-          Log.info "Building docker image: #{docker_image}"
+          Log.info "Building docker image: #{@docker_image_tag}"
           image = ::Docker::Image.build(@dockerfile)
-          image.tag('repo' => docker_image, 'force' => true)
+          image.tag('repo' => @docker_image_tag, 'force' => true)
         end
       end
 
@@ -45,7 +48,7 @@ module Arbiter
         FileUtils.cp_r "/etc/puppet/modules/r8", puppet_modules_dir unless File.exist? "#{puppet_modules_dir}/r8"
 
         docker_cli_cmd = "docker run --name #{docker_container_name} -v #{output_dir}:#{output_dir_container} -v #{output_dir}/tmp:/tmp" +
-                        ((@execution_type.eql? 'puppet') ? " -v #{puppet_modules_dir}:/etc/puppet/modules" : "") + " #{@docker_image} #{@docker_command}"
+                        ((@execution_type.eql? 'puppet') ? " -v #{puppet_modules_dir}:/etc/puppet/modules" : "") + " #{@docker_image_final} #{@docker_command}"
 
         Log.info "Starting Docker container..."
 
