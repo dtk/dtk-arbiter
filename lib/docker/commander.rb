@@ -13,7 +13,7 @@ module Arbiter
         @puppet_manifest = puppet_manifest
         @execution_type = execution_type
 
-        unless ::Docker::Image.exist?(docker_image) && !@dockerfile
+        unless @dockerfile
           Log.info "Getting docker image '#{docker_image}', this may take a while"
           ::Docker::Image.create('fromImage' => docker_image)
         end
