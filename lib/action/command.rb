@@ -44,20 +44,22 @@ module Arbiter
       # Creates Posix Spawn of given process
       #
       def start_task
-        begin
+        Bundler.with_clean_env do
+          begin
 
-          Commander.set_environment_variables(@env_vars)
+            Commander.set_environment_variables(@env_vars)
 
-          @out, @err, @process_status, results = capture3_with_timeout(formulate_command)
+            @out, @err, @process_status, results = capture3_with_timeout(formulate_command)
 
-          @error_message = "Timeout (#{@timeout} sec) for this action has been exceeded" if results[:timeout]
+            @error_message = "Timeout (#{@timeout} sec) for this action has been exceeded" if results[:timeout]
 
-        rescue Exception => e
-          @error_message = e.message
-          @backtrace = e.backtrace
-          Log.error(@error_message, @backtrace)
-        ensure
-          Commander.clear_environment_variables(@env_vars)
+          rescue Exception => e
+            @error_message = e.message
+            @backtrace = e.backtrace
+            Log.error(@error_message, @backtrace)
+          ensure
+            Commander.clear_environment_variables(@env_vars)
+          end
         end
       end
 
