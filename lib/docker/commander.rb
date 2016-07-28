@@ -7,7 +7,7 @@ module Arbiter
 
       include Common::Open3
 
-      def initialize(docker_image, docker_command, puppet_manifest, execution_type, dockerfile)
+      def initialize(docker_image, docker_command, puppet_manifest, execution_type, dockerfile, module_name, docker_run_params)
         @docker_image = docker_image
         @docker_command = docker_command
         @dockerfile = dockerfile
@@ -15,17 +15,12 @@ module Arbiter
         @execution_type = execution_type
         @docker_image_tag = Digest::SHA1.hexdigest @dockerfile if @dockerfile
         @docker_image_final = @docker_image_tag || @docker_image
+        @module_name = module_name
+        @docker_run_params = docker_run_params
 
         unless @dockerfile
           Log.info "Getting docker image '#{docker_image}', this may take a while"
           ::Docker::Image.create('fromImage' => docker_image)
-        end
-
-         # build required docker image if requested
-        if @dockerfile
-          Log.info "Building docker image: #{@docker_image_tag}"
-          image = ::Docker::Image.build(@dockerfile)
-          image.tag('repo' => @docker_image_tag, 'force' => true)
         end
       end
 
@@ -37,7 +32,10 @@ module Arbiter
         output_dir_container = "/host_volume"
         output_file = "#{output_dir}/report.yml"
         puppet_modules_dir = '/usr/share/dtk/puppet-modules'
-
+        ## get the module that invoked the docke action
+        # remove namespace
+        module_name_short = @module_name.split(':')[1]
+        module_absolute_location = "#{puppet_modules_dir}/#{module_name_short}"
 
         FileUtils.mkdir_p output_dir_tmp
         # make sure dtkyaml reporter is available to puppet
@@ -46,6 +44,21 @@ module Arbiter
         File.open("#{output_dir}/manifest.pp", 'w') { |file| file.write(@puppet_manifest) }
         # make sure r8 module is available
         FileUtils.cp_r "/etc/puppet/modules/r8", puppet_modules_dir unless File.exist? "#{puppet_modules_dir}/r8"
+
+         # build required docker image if requested
+        if @dockerfile
+          # generate the dockerfile in the module root
+          # use a name with a timestamp to avoid overriting any possible existing Dockerfiles
+          dockerfile_name = "Dockerfile.#{docker_container_name}"
+          dockerfile_location = "#{module_absolute_location}/#{dockerfile_name}"
+          File.open(dockerfile_location, 'w') { |file| file.write(@dockerfile) }
+          Log.info "Building docker image: #{@docker_image_tag}"
+          # image = ::Docker::Image.build(@dockerfile)
+          image = ::Docker::Image.build_from_dir(module_absolute_location, { 'dockerfile' => dockerfile_name })
+          image.tag('repo' => @docker_image_tag, 'force' => true)
+          # delete the temporary Dockerfile
+          FileUtils.rm(dockerfile_location)
+        end
 
         docker_cli_cmd = "docker run --name #{docker_container_name} -v #{output_dir}:#{output_dir_container} -v #{output_dir}/tmp:/tmp" +
                         ((@execution_type.eql? 'puppet') ? " -v #{puppet_modules_dir}:/etc/puppet/modules" : "") + " #{@docker_image_final} #{@docker_command}"
@@ -87,6 +100,24 @@ module Arbiter
       end
 
     private
+
+      def get_cli_args (msg, module_location)
+        cli_args = ''
+        # add env vars
+        cli_args += msg[:docker_run_params][:environment].map{|k,v| "-e #{k}=#{v}"}.join(' ') + ' ' if msg[:docker_run_params][:environment]
+        # add entrypoint
+        cli_args += "--entrypoint #{module_location}/#{msg[:docker_run_params][:entrypoint]} "
+        # add volumes
+        cli_args += msg[:docker_run_params][:volumes].map{|a| "-v #{module_location}/#{a}"}.join(' ') + ' ' if msg[:docker_run_params][:volumes]
+        # set privileged
+        cli_args += '--privileged ' if msg[:docker_run_params][:privileged]
+        # set rm
+        cli_args += '--rm ' if msg[:docker_run_params][:rm]
+        # set name
+        cli_args += "--name #{msg[:docker_run_params][:name]} " if msg[:docker_run_params][:name]
+
+        cli_args
+      end
 
       def read_dynamic_attributes(path, identifier = 'dtk_exported_variables')
         full_path = File.join(path, identifier)
