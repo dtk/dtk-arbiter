@@ -14,7 +14,6 @@ module Arbiter
 
       def initialize(message_content, listener)
         super(message_content, listener)
-        # require 'debugger'; debugger
         @process_pool = []
         @docker_image = @received_message[:docker_image]
         @docker_command = @received_message[:docker_command]
@@ -43,7 +42,7 @@ module Arbiter
           return
         end
 
-        @commander = Docker::Commander.new(@docker_image, @docker_command, @puppet_manifest, @execution_type, @dockerfile)
+        @commander = Docker::Commander.new(@docker_image, @docker_command, @puppet_manifest, @execution_type, @dockerfile, @module_name, @docker_run_params)
 
         @commander.run()
 
