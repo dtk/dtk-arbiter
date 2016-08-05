@@ -52,6 +52,7 @@ begin
   EM.run {
     Signal.trap('INT')  { EM.stop }
     Signal.trap('TERM') { EM.stop }
+    Signal.trap('IOT')  { Arbiter::Log.error("Caught signal IOT(6) which could mean an error occured. Resuming DTK Arbiter normally.") }
 
     Arbiter::Log.debug "Starting Arbiter(EventMachine) listener, connecting to #{Arbiter::Utils::Config.full_url} ..."
 
