@@ -41,7 +41,9 @@ module Arbiter
       end
 
       def run
-        docker_container_name = @docker_run_params[:name] || "dtk#{Time.now.to_i}"
+        # TODO: DTK-2553: dario, put in very fast workaround; we should do away with using name and instead get container using its id
+#        docker_container_name = @docker_run_params[:name] || "dtk#{Time.now.to_i}"
+        docker_container_name = "dtk#{Time.now.to_i}"
         output_dir = "/usr/share/dtk/docker-worker/#{docker_container_name}"
         output_dir_tmp = "#{output_dir}/tmp"
         output_dir_container = "/host_volume"
