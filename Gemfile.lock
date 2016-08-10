@@ -17,7 +17,7 @@ GEM
       json
     dotenv (2.0.2)
     eventmachine (1.0.8)
-    excon (0.45.4)
+    excon (0.51.0)
     git (1.2.9.1)
     grit (2.5.0)
       diff-lcs (~> 1.1)
@@ -49,4 +49,4 @@ DEPENDENCIES
   sys-proctable
 
 BUNDLED WITH
-   1.10.6
+   1.12.5
