@@ -7,6 +7,9 @@ module Arbiter
 
       include Common::Open3
 
+      NUMBER_OF_RETRIES = 5
+      WAIT_TIME = 5
+
       def initialize(docker_image, docker_command, puppet_manifest, execution_type, dockerfile, module_name, docker_run_params)
         @docker_image = docker_image
         @docker_command = docker_command
@@ -17,6 +20,19 @@ module Arbiter
         @docker_image_final = @docker_image_tag || @docker_image
         @module_name = module_name
         @docker_run_params = docker_run_params
+
+        # make sure we can connect to Docker daemon
+        docker_conn_retries = NUMBER_OF_RETRIES
+
+        begin
+          raise ActionAbort, "Arbiter not able to connect to Docker daemon." if docker_conn_retries == 0
+          images = ::Docker::Image.all
+        rescue Excon::Errors::SocketError => e
+          Log.info("Failed to connect to Docker daemon, retrying.")
+          sleep WAIT_TIME
+          docker_conn_retries -= 1
+          retry
+        end
 
         unless @dockerfile
           Log.info "Getting docker image '#{docker_image}', this may take a while"
