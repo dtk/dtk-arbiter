@@ -24,7 +24,8 @@ module Arbiter
         @version_context = get(:version_context)
         @module_name = @received_message[:module_name]
         @docker_run_params = @received_message[:docker_run_params]
-
+        @dynamic_attributes = @received_message[:dynamic_attributes]
+require 'debugger'; debugger
         # @image = Docker::Image.create('fromImage' => @docker_image )
       end
 
@@ -42,7 +43,7 @@ module Arbiter
           return
         end
 
-        @commander = Docker::Commander.new(@docker_image, @docker_command, @puppet_manifest, @execution_type, @dockerfile, @module_name, @docker_run_params)
+        @commander = Docker::Commander.new(@docker_image, @docker_command, @puppet_manifest, @execution_type, @dockerfile, @module_name, @docker_run_params, @dynamic_attributes)
 
         @commander.run()
 
