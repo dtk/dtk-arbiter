@@ -168,7 +168,7 @@ module Arbiter
 
           final_array << {:attribute_id => cmp_ref_id, :attribute_val => cmp_ref_val}
         end
-        {:dynamic_attributes => final_array}
+        final_array
       end
 
     end
