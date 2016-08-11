@@ -10,7 +10,7 @@ module Arbiter
       NUMBER_OF_RETRIES = 5
       WAIT_TIME = 5
 
-      def initialize(docker_image, docker_command, puppet_manifest, execution_type, dockerfile, module_name, docker_run_params)
+      def initialize(docker_image, docker_command, puppet_manifest, execution_type, dockerfile, module_name, docker_run_params, dynamic_attributes)
         @docker_image = docker_image
         @docker_command = docker_command
         @dockerfile = dockerfile
@@ -20,6 +20,7 @@ module Arbiter
         @docker_image_final = @docker_image_tag || @docker_image
         @module_name = module_name
         @docker_run_params = docker_run_params
+        @dynamic_attributes = dynamic_attributes
 
         # make sure we can connect to Docker daemon
         docker_conn_retries = NUMBER_OF_RETRIES
@@ -99,12 +100,14 @@ module Arbiter
         container = ::Docker::Container.get(docker_container_name) unless @docker_run_params[:rm]
 
         @results = Hash.new
+require 'debugger';debugger
+        dyn_attr_data = read_dynamic_attributes(output_dir_tmp) || read_dynamic_attributes(output_dir_tmp, 'dtk_exported_variables_json', 'json')
 
         @results[:puppet_report] = docker_puppet_report ||= ''
         @results[:stdout] = docker_run_stdout
         @results[:stderr] = docker_run_stderr
         @results[:status] = exit_status.exitstatus
-        @results[:dynamic_attributes] = read_dynamic_attributes(output_dir_tmp) || read_dynamic_attributes(output_dir_tmp, 'dtk_exported_variables_json', 'json')
+        @results[:dynamic_attributes] = process_dynamic_attributes(dyn_attr_data, @dynamic_attributes) 
 
         # cleanup
 #        Log.info("Deleting container and doing cleanup")
@@ -151,6 +154,22 @@ module Arbiter
         else
           return nil
         end
+      end
+
+      def process_dynamic_attributes(dyn_attr_data, dyn_attr_info)
+        final_array = []
+
+        dyn_attr_info.each do |ref_obj|
+          cmp_ref      = ref_obj[:component_ref].split('::')[0]
+          cmp_ref_name = ref_obj[:name]
+          cmp_ref_id   = ref_obj[:id]
+
+          cmp_file = dyn_attr_data[cmp_ref]
+          cmp_ref_val = cmp_file[cmp_ref_name]
+
+          final_array << {:attribute_id => cmp_ref_id, :attribute_val => cmp_ref_val}
+        end
+        {:dynamic_attributes => final_array}
       end
 
     end
