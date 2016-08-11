@@ -154,8 +154,8 @@ module Arbiter
       end
 
       def process_dynamic_attributes(dyn_attr_data, dyn_attr_info)
+        return [] unless dyn_attr_data
         final_array = []
-
         dyn_attr_info.each do |ref_obj|
           cmp_ref      = ref_obj[:component_ref].split('::')[0]
           cmp_ref_name = ref_obj[:name]
