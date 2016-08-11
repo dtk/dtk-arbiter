@@ -25,7 +25,6 @@ module Arbiter
         @module_name = @received_message[:module_name]
         @docker_run_params = @received_message[:docker_run_params]
         @dynamic_attributes = @received_message[:dynamic_attributes]
-require 'debugger'; debugger
         # @image = Docker::Image.create('fromImage' => @docker_image )
       end
 

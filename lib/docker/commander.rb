@@ -100,7 +100,6 @@ module Arbiter
         container = ::Docker::Container.get(docker_container_name) unless @docker_run_params[:rm]
 
         @results = Hash.new
-require 'debugger';debugger
         dyn_attr_data = read_dynamic_attributes(output_dir_tmp) || read_dynamic_attributes(output_dir_tmp, 'dtk_exported_variables_json', 'json')
 
         @results[:puppet_report] = docker_puppet_report ||= ''
