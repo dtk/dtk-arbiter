@@ -51,7 +51,7 @@ module Arbiter
         ## get the module that invoked the docke action
         # remove namespace
         @module_name_short = @module_name.split(':')[1]
-        module_absolute_location = "#{puppet_modules_dir}/#{@module_name_short}"
+        module_absolute_location = ENV['HOST_VOLUME'].nil? ? "#{puppet_modules_dir}/#{@module_name_short}" : "#{ENV['HOST_VOLUME']}/puppet-modules"
 
         FileUtils.mkdir_p output_dir_tmp
         # make sure dtkyaml reporter is available to puppet
