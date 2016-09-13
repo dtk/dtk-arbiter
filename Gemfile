@@ -10,6 +10,7 @@ gem 'parseconfig'
 gem 'docker-api'
 gem 'grit'
 gem 'sys-proctable'
+gem 'aws-sdk'
 
 group :development do
   gem 'dotenv'
