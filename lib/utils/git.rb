@@ -2,15 +2,12 @@ require 'rubygems'
 require 'grit'
 require File.expand_path('../common/gitclient',File.dirname(__FILE__))
 
-MODULE_PATH      = "/etc/puppet/modules"
-DTK_PUPPET_PATH  = "/usr/share/dtk/puppet-modules"
+DTK_MODULE_PATH  = "/usr/share/dtk/modules"
 
 module Arbiter
   module Utils
     class Git
 
-      PUPPET_MODULE_PATH  = "/usr/share/dtk/puppet-modules"
-      MODULE_PATH         = "/etc/puppet/modules"
       NUMBER_OF_RETRIES = 5
 
       def self.git_repo_full_url(git_url, repo_name)
@@ -35,7 +32,7 @@ module Arbiter
         end
       end
 
-      def self.pull_modules(version_context,git_server)
+      def self.pull_modules(version_context,git_server,symlink_location = nil)
         begin
           version_context.each do |vc|
             [:repo, :implementation, :branch].each do |field|
@@ -44,11 +41,11 @@ module Arbiter
               end
             end
 
-            FileUtils.mkdir_p(DTK_PUPPET_PATH) unless File.directory?(DTK_PUPPET_PATH)
+            FileUtils.mkdir_p(DTK_MODULE_PATH) unless File.directory?(DTK_MODULE_PATH)
 
             module_name     = vc[:implementation]
-            puppet_repo_dir = "#{DTK_PUPPET_PATH}/#{module_name}"
-            repo_dir        = "#{MODULE_PATH}/#{module_name}"
+            module_repo_dir = "#{DTK_MODULE_PATH}/#{module_name}"
+            repo_dir        = "#{symlink_location}/#{module_name}"
             remote_repo     = git_repo_full_url(git_server, vc[:repo])
 
             opts = Hash.new
@@ -56,17 +53,17 @@ module Arbiter
 
             pull_success = false
 
-            if File.exists?("#{puppet_repo_dir}/.git")
-              pull_success = pull_module(puppet_repo_dir, vc[:branch], opts) rescue false
+            if File.exists?("#{module_repo_dir}/.git")
+              pull_success = pull_module(module_repo_dir, vc[:branch], opts) rescue false
             end
 
             unless pull_success
               begin
                 tries ||= NUMBER_OF_RETRIES
-                clean_and_clone_module(puppet_repo_dir, remote_repo,vc[:branch], opts)
+                clean_and_clone_module(module_repo_dir, remote_repo,vc[:branch], opts)
                rescue Exception => e
                 unless (tries -= 1).zero?
-                  Log.info("Re-trying puppet clone for '#{puppet_repo_dir}' becuase of error: #{e.message}, retries left: #{tries}")
+                  Log.info("Re-trying module clone for '#{module_repo_dir}' becuase of error: #{e.message}, retries left: #{tries}")
                   sleep(1)
                   retry
                 end
@@ -83,13 +80,8 @@ module Arbiter
               FileUtils.rm_r(repo_dir)
             end
 
-            puppet_dir = "#{DTK_PUPPET_PATH}/#{module_name}/puppet"
-
-            if File.directory?(puppet_dir)
-              FileUtils.ln_sf(puppet_dir, repo_dir)
-            else
-              FileUtils.ln_sf("#{DTK_PUPPET_PATH}/#{module_name}", repo_dir)
-            end
+            # symlink the module to designated location  
+            FileUtils.ln_sf("#{DTK_MODULE_PATH}/#{module_name}", repo_dir) if symlink_location
           end
          ensure
           # this is due to GIT custom againt we are using
