@@ -15,8 +15,8 @@ module Arbiter
       NUMBER_OF_RETRIES = 5
 
       PUPPET_LOG_DIR      = "/var/log/puppet"
-      MODULE_PATH         = "/etc/puppet/modules"
-      PUPPET_MODULE_PATH  = "/usr/share/dtk/puppet-modules"
+      PUPPET_MODULE_PATH  = "/etc/puppet/modules"
+      MODULE_PATH         = "/usr/share/dtk/modules"
       PUPPET_LOG_TASK     = "/usr/share/dtk/tasks/"
       WAIT_PS_END         = 10
       YUM_LOCK_FILE       = "/var/run/yum.pid"
@@ -35,7 +35,7 @@ module Arbiter
         ENV['LC_ALL'] = "en_US.UTF-8"
 
         # Make sure following is prepared
-        FileUtils.mkdir_p(PUPPET_MODULE_PATH, mode: 0755) unless File.directory?(PUPPET_MODULE_PATH)
+        FileUtils.mkdir_p(MODULE_PATH, mode: 0755) unless File.directory?(MODULE_PATH)
         FileUtils.mkdir_p(PUPPET_LOG_TASK, mode: 0755)    unless File.directory?(PUPPET_LOG_TASK)
       end
 
@@ -44,7 +44,7 @@ module Arbiter
         git_server = Utils::Config.git_server
 
         # pulling modules and preparing environment for changes
-        response = Utils::Git.pull_modules(get(:version_context), git_server)
+        response = Utils::Git.pull_modules(get(:version_context), git_server, PUPPET_MODULE_PATH)
 
         # finally run puppet execution
         puppet_run_response = run()
@@ -82,7 +82,7 @@ module Arbiter
             temp_run_file.close
 
 
-            command_string = "#{cmd} apply #{temp_run_file.path} --debug --modulepath /etc/puppet/modules"
+            command_string = "#{cmd} apply #{temp_run_file.path} --debug --modulepath #{PUPPET_MODULE_PATH}"
 
             yum_lock_retries = YUM_LOCK_RETRIES
 
@@ -118,13 +118,15 @@ module Arbiter
           end
         ensure
           # we log everything
-          log_dir          = File.join(PUPPET_LOG_TASK, get(:service_name), "task_id_#{get(:task_id)}")
+          log_dir          = File.join(PUPPET_LOG_DIR, get(:service_name), "task_id_#{get(:task_id)}")
+          task_dir          = File.join(PUPPET_LOG_TASK, get(:service_name), "task_id_#{get(:task_id)}")
           last_task_dir    = File.join(PUPPET_LOG_TASK, 'last-task')
-          puppet_file_path = File.join(log_dir, 'site-stage-invocation.pp')
+          puppet_file_path = File.join(task_dir, 'site-stage-invocation.pp')
           puppet_log_path  = File.join(log_dir, 'site-stage.log')
 
           # lets create task dir e.g. /usr/share/dtk/tasks/dock-test/task_id_2147548954
           FileUtils.mkdir_p(log_dir, mode: 0755)
+          FileUtils.mkdir_p(task_dir, mode: 0755)
 
           # copy temp file as execution file (which it is)
           FileUtils.cp(temp_run_file.path, puppet_file_path)
@@ -143,7 +145,9 @@ module Arbiter
 
           # create sym link for last_task dir
           FileUtils.rm(last_task_dir) if File.directory?(last_task_dir)
-          FileUtils.ln_s(log_dir, last_task_dir)
+          FileUtils.ln_s(task_dir, last_task_dir)
+          # create symlink for last puppet log
+          FileUtils.ln_sf(puppet_log_path, "#{PUPPET_LOG_DIR}/last.log")
           Log.info("Puppet execution information has been created, and can be found at '#{log_dir}'")
         end
       end
