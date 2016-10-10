@@ -119,7 +119,7 @@ module Arbiter
         ensure
           # we log everything
           log_dir          = File.join(PUPPET_LOG_DIR, get(:service_name), "task_id_#{get(:task_id)}")
-          task_dir          = File.join(PUPPET_LOG_TASK, get(:service_name), "task_id_#{get(:task_id)}")
+          task_dir         = File.join(PUPPET_LOG_TASK, get(:service_name), "task_id_#{get(:task_id)}")
           last_task_dir    = File.join(PUPPET_LOG_TASK, 'last-task')
           puppet_file_path = File.join(task_dir, 'site-stage-invocation.pp')
           puppet_log_path  = File.join(log_dir, 'site-stage.log')
@@ -148,6 +148,7 @@ module Arbiter
           FileUtils.ln_s(task_dir, last_task_dir)
           # create symlink for last puppet log
           FileUtils.ln_sf(puppet_log_path, "#{PUPPET_LOG_DIR}/last.log")
+          FileUtils.ln_sf(puppet_log_path, task_dir)
           Log.info("Puppet execution information has been created, and can be found at '#{log_dir}'")
         end
       end
