@@ -1,0 +1,15 @@
+[Unit]
+Description=dtk-arbiter
+After=network.target
+
+[Service]
+Type=forking
+StandardOutput=syslog
+StandardError=syslog
+ExecStart=/usr/share/dtk/dtk-arbiter/wrappers/dtk-arbiter --pid=/var/run/dtk-arbiter.pid
+ExecReload=/bin/kill -USR1 $MAINPID
+Restart=on-failure
+PIDFile=/var/run/dtk-arbiter.pid
+
+[Install]
+WantedBy=multi-user.target
