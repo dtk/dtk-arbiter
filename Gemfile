@@ -12,6 +12,7 @@ gem 'grit'
 gem 'sys-proctable'
 gem 'aws-sdk'
 gem 'rest-client', '1.8.0'
+gem 'grpc'
 
 group :development do
   gem 'dotenv'
