@@ -48,6 +48,38 @@ else
   Arbiter::Log.info("DTK Arbiter running as a service, setting needed environment variables")
 end
 
+this_dir = File.expand_path(File.dirname(__FILE__))
+lib_dir = File.join(this_dir, 'lib')
+$LOAD_PATH.unshift(lib_dir) unless $LOAD_PATH.include?(lib_dir)
+
+require 'grpc'
+require 'dtkarbiterservice_services_pb'
+
+class ArbiterGRPCServer < Dtkarbiterservice::ArbiterProvider::Service
+  def process(provider_message, _unused_call)
+    require 'json'
+    message_hash = JSON.parse(provider_message.message)
+    module_name = message_hash["module_name"]  
+    entrypoint = message_hash["entrypoint"]
+    output = `"/usr/share/dtk/modules/#{module_name}/#{entrypoint}"`
+    Dtkarbiterservice::ArbiterMessage.new(message: "output message #{output}")
+  end
+end
+
+# main starts an RpcServer that receives requests to ArbiterGRPCServer
+# server port.
+def main_rpcserver
+  s = GRPC::RpcServer.new
+  s.add_http2_port('0.0.0.0:50051', :this_port_is_insecure)
+  s.handle(ArbiterGRPCServer)
+  s.run_till_terminated
+end
+
+# attempt to start ArbiterGRPCServer in EventMachine
+EM.run {
+  main_rpcserver
+}
+
 begin
   EM.run {
     Signal.trap('INT')  { EM.stop }
@@ -57,6 +89,7 @@ begin
     Arbiter::Log.debug "Starting Arbiter(EventMachine) listener, connecting to #{Arbiter::Utils::Config.full_url} ..."
 
     EM.connect Arbiter::Utils::Config.stomp_url, Arbiter::Utils::Config.stomp_port, Arbiter::Listener
+
   }
 rescue Arbiter::ArbiterExit => ex
   Arbiter::Log.error("Exiting arbiter, reason: " + ex.message)
@@ -65,3 +98,4 @@ rescue Exception => e
   Arbiter::Log.fatal(e.message, e.backtrace)
   exit(1)
 end
+
