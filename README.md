@@ -1,11 +1,11 @@
-### Welcome to DTK Arbiter
+### Welcome to Dtk Arbiter
 
 
 ###### Description
 
-DTK Arbiter is ruby process which uses EventMachine for continus running. It can be run either in foreground or using the provided init scripts.
+Dtk Arbiter is ruby process which uses EventMachine for continus running. It can be run either in foreground or using the provided init scripts.
 
-DTK Arbiter is small process meant to be distributed on remote nodes to provide communication via STOMP. It aggregates and communicates with master nodes and it is easily extendable. It commes with parallel worker execution and strong SSH based message encryption. It has been developed to replace Mcollective functionality with its much simplfied and efficient design.
+Dtk Arbiter is small process meant to be distributed on remote nodes to provide communication via STOMP. It aggregates and communicates with master nodes and it is easily extendable. It commes with parallel worker execution and strong SSH based message encryption. It has been developed to replace Mcollective functionality with its much simplfied and efficient design.
 
 ##### Requirements
 
@@ -28,7 +28,7 @@ After cloning project from github make sure you run following command
 
 ##### Environment
 
-Arbiter uses dotenv gem to setup environment in development mode. File named `.env` has not been commited due to obvious security implications. Following are environment variables needed to start DTK Arbiter.
+Arbiter uses dotenv gem to setup environment in development mode. File named `.env` has not been commited due to obvious security implications. Following are environment variables needed to start Dtk Arbiter.
 
     STOMP_HOST=
     STOMP_PORT=
@@ -37,7 +37,7 @@ Arbiter uses dotenv gem to setup environment in development mode. File named `.e
     INBOX_TOPIC=/topic/arbiter.dtk
     OUTBOX_QUEUE=/queue/arbiter.reply
 
-This would be template for `.env` file needed in DTK Arbiter folder.
+This would be template for `.env` file needed in Dtk Arbiter folder.
 
 If available, it can also read the MCollective server configuration file (`/etc/mcollective/server.cfg`).
 
