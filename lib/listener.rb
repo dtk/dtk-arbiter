@@ -255,6 +255,8 @@ module Arbiter
         when 'cancel_agent', 'puppet_cancel'
           Log.info "Sending cancel signal to worker for request (ID: '#{message[:request_id]}')"
           cancel_worker(message[:request_id])
+        when 'generic_worker'
+          ::Arbiter::Generic::Worker.new(message, self)
         else
           nil
         end
