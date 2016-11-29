@@ -32,7 +32,7 @@
 #
 
 require 'grpc'
-require 'dtkarbiterservice_pb'
+require_relative 'dtkarbiterservice_pb'
 
 module Dtkarbiterservice
   module ArbiterProvider
