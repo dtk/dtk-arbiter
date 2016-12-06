@@ -3,6 +3,7 @@ require 'json'
 
 require File.expand_path('../../common/worker', __FILE__)
 require File.expand_path('../../dtkarbiterservice_services_pb', __FILE__)
+require File.expand_path('../../docker/commander', __FILE__)
 
 module Arbiter
   module Generic
@@ -23,7 +24,7 @@ module Arbiter
         @provider_entrypoint = "#{MODULE_PATH}/dtk-provider-#{@provider_type}/init"
         @pidfile_path = "/tmp/dtk-provider-#{@provider_type}.pid"
 
-        @provider_data << {:module_name => @module_name}
+        @provider_data.first['module_name'] = @module_name
 
         # Make sure following is prepared
         FileUtils.mkdir_p(MODULE_PATH, mode: 0755) unless File.directory?(MODULE_PATH)
@@ -38,7 +39,7 @@ module Arbiter
 
         # finally run puppet execution
         provider_run_response = run()
-        provider_run_response.merge!(success_response)
+        #provider_run_response.merge!(success_response)
 
         notify(provider_run_response)
       end
@@ -50,14 +51,42 @@ module Arbiter
           break if start_daemon
           sleep 1
         end
+        unless start_daemon
+          notify_of_error("Failed to start #{provider_type} gRPC daemon", :missing_params)
+          return
+        end
 
+        # send a message to the gRPC provider server/daemon
         stub = Dtkarbiterservice::ArbiterProvider::Stub.new('localhost:50051', :this_channel_is_insecure)
         providermessage = @provider_data.to_json
         message = stub.process(Dtkarbiterservice::ProviderMessage.new(message: providermessage)).message
-        puts "Message: #{message}"
+        message = JSON.parse(message)
 
-        response = {:message => message}
-        response
+        #::Arbiter::Docker::Worker.new({}, self)
+
+        # if provider returns a message saying that docker execution is required
+        # invoke the docker commander
+        if message['execution_type'] = 'ephemeral'
+          docker_image = nil
+          dockerfile = message['dockerfile']
+          docker_command = nil
+
+          commander = Docker::Commander.new(nil,                  # @docker_image
+                                            nil,                  # @docker_command,
+                                            nil,                  # @puppet_manifest,
+                                            'ruby',               # @execution_type,
+                                            dockerfile,
+                                            @module_name,
+                                            {},                  # @docker_run_params,
+                                            nil)                  # @dynamic_attributes
+
+          commander.run()
+
+          commander.results()
+        else
+          response = {:message => message}
+          response
+        end
       end
 
   private
@@ -72,7 +101,9 @@ module Arbiter
         begin
           puts 'starting daemon'
           daemon_job = fork do
-            exec @provider_entrypoint
+            Bundler.with_clean_env do
+              exec @provider_entrypoint
+            end
           end
           sleep 2
           true
