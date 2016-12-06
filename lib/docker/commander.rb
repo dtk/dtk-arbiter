@@ -47,11 +47,11 @@ module Arbiter
         output_dir_tmp = "#{output_dir}/tmp"
         output_dir_container = "/host_volume"
         output_file = "#{output_dir}/report.yml"
-        puppet_modules_dir = '/usr/share/dtk/puppet-modules'
+        puppet_modules_dir = '/usr/share/dtk/modules'
         ## get the module that invoked the docke action
         # remove namespace
         @module_name_short = @module_name.split(':')[1]
-        module_absolute_location = ENV['HOST_VOLUME'].nil? ? "#{puppet_modules_dir}/#{@module_name_short}" : "#{ENV['HOST_VOLUME']}/puppet-modules"
+        module_absolute_location = ENV['HOST_VOLUME'].nil? ? "#{puppet_modules_dir}/#{@module_name_short}" : "#{ENV['HOST_VOLUME']}/modules"
 
         FileUtils.mkdir_p output_dir_tmp
         # make sure dtkyaml reporter is available to puppet
@@ -83,6 +83,7 @@ module Arbiter
                         get_cli_args(@docker_run_params, module_absolute_location) +
                         " #{@docker_image_final} #{@docker_command}"
         Log.info "Starting Docker container..."
+        Log.debug "Docker cli command: #{docker_cli_cmd}"
 
         docker_run_stdout, docker_run_stderr, exit_status, results = capture3_with_timeout(docker_cli_cmd)
 
@@ -126,7 +127,7 @@ module Arbiter
         # add env vars
         cli_args += docker_run_params[:environment].map{|k,v| "-e #{k}=#{v}"}.join(' ') + ' ' if docker_run_params[:environment]
         # add entrypoint
-        cli_args += " --entrypoint #{module_location}/#{docker_run_params[:entrypoint]} "
+        cli_args += " --entrypoint #{module_location}/#{docker_run_params[:entrypoint]} " if docker_run_params[:entrypoint]
         # add volumes
         cli_args += docker_run_params[:volumes].map{|a| "-v #{module_location}/#{a}"}.join(' ') + ' ' if docker_run_params[:volumes]
         # set privileged
