@@ -16,6 +16,6 @@ gem 'grpc'
 
 group :development do
   gem 'dotenv'
-  gem 'debugger'
+  gem 'byebug'
   gem 'looksee'
 end
