@@ -1,5 +1,7 @@
 require 'grpc'
 require 'json'
+require 'socket'
+require 'timeout'
 
 require File.expand_path('../../common/worker', __FILE__)
 require File.expand_path('../../dtkarbiterservice_services_pb', __FILE__)
@@ -15,16 +17,25 @@ module Arbiter
 
       def initialize(message_content, listener)
         super(message_content, listener)
+        require 'byebug'; debugger
 
-        @provider_type    = get(:provider_type) || UNKNOWN_PROVIDER
-        @provider_data    = get(:provider_data) || NO_PROVIDER_DATA
-        @version_context  = get(:version_context)
-        @module_name      = get(:module_name)
+        @provider_type          = get(:provider_type) || UNKNOWN_PROVIDER
+        #@provider_data    = get(:provider_data) || NO_PROVIDER_DATA
+        @attributes             = get(:attributes)
+        @provider_attributes    = @attributes[:provider]
+        @instance_attributes    = @attributes[:instance]
+        #@version_context     = get(:version_context)
+        @module_info = get(:module_info)
+        @component_name         = get(:component_name)
+        # i.e. remove namespace
+        @component_name_short   = @component_name.split('::')[1]
 
-        @provider_entrypoint = "#{MODULE_PATH}/dtk-provider-#{@provider_type}/init"
-        @pidfile_path = "/tmp/dtk-provider-#{@provider_type}.pid"
+        @provider_name_internal = "dtk-provider-#{@provider_type}"
 
-        @provider_data.first['module_name'] = @module_name
+        @provider_entrypoint    = "#{MODULE_PATH}/#{@provider_name_internal}/init"
+        @pidfile_path           = "/tmp/#{@provider_name_internal}.pid"
+
+        #@provider_data.first['module_name'] = @module_name
 
         # Make sure following is prepared
         FileUtils.mkdir_p(MODULE_PATH, mode: 0755) unless File.directory?(MODULE_PATH)
@@ -37,7 +48,7 @@ module Arbiter
         # pulling modules and preparing environment for changes
         response = Utils::Git.pull_modules(get(:version_context), git_server)
 
-        # finally run puppet execution
+        # run the provider
         provider_run_response = run()
         #provider_run_response.merge!(success_response)
 
@@ -46,6 +57,7 @@ module Arbiter
 
       def run()
         # spin up the provider gRPC server
+        grpc_random_port = generate_port
         tries ||= NUMBER_OF_RETRIES
         until (tries -= 1).zero?
           break if start_daemon
@@ -57,10 +69,20 @@ module Arbiter
         end
 
         # send a message to the gRPC provider server/daemon
-        stub = Dtkarbiterservice::ArbiterProvider::Stub.new('localhost:50051', :this_channel_is_insecure)
-        providermessage = @provider_data.to_json
-        message = stub.process(Dtkarbiterservice::ProviderMessage.new(message: providermessage)).message
+        stub = Dtkarbiterservice::ArbiterProvider::Stub.new("localhost:#{grpc_random_port}", :this_channel_is_insecure)
+
+        # get action attributes and write them JSON serialized to a file
+        #action_attributes = @provider_data.first[:action_attributes].to_json
+        #action_attributes_file_path  = "/tmp/dtk-#{@module_name}-attributes-#{Time.now.to_i}"
+        #File.open(action_attributes_file_path, 'w') { |file| file.write(action_attributes) }
+        #@provider_data.first[:action_attributes_file_path] = action_attributes_file_path
+
+        provider_message_hash = @attributes.merge(:component_name => @component_name_short)
+        provider_message = provider_message_hash.to_json
+
+        message = stub.process(Dtkarbiterservice::ProviderMessage.new(message: provider_message)).message
         message = JSON.parse(message)
+        stop_daemon
 
         #::Arbiter::Docker::Worker.new({}, self)
 
@@ -68,21 +90,29 @@ module Arbiter
         # invoke the docker commander
         if message['execution_type'] = 'ephemeral'
           docker_image = nil
+          docker_image_tag = @provider_name_internal
           dockerfile = message['dockerfile']
-          docker_command = nil
+          # this will get appended to the ENTRYPOINT in the image
+          # making it the first argument
+          # docker_command = action_attributes_file_path
 
-          commander = Docker::Commander.new(nil,                  # @docker_image
-                                            nil,                  # @docker_command,
-                                            nil,                  # @puppet_manifest,
-                                            'ruby',               # @execution_type,
-                                            dockerfile,
-                                            @module_name,
-                                            {},                  # @docker_run_params,
-                                            nil)                  # @dynamic_attributes
+          # commander = Docker::Commander.new(nil,                  # @docker_image
+          #                                   docker_command,                  # @docker_command,
+          #                                   nil,                  # @puppet_manifest,
+          #                                   'ruby',               # @execution_type,
+          #                                   dockerfile,
+          #                                   @module_name,
+          #                                   {},                  # @docker_run_params,
+          #                                   nil)                  # @dynamic_attributes
 
-          commander.run()
+          # commander.run()
 
-          commander.results()
+          # commander.results()
+          Log.info "Building docker image #{docker_image_tag}"
+          docker_image = ::Docker::Image.build(dockerfile)
+          docker_image.tag('repo' => docker_image_tag, 'force' => true)
+          start_daemon_docker(docker_image_tag, grpc_random_port.to_s)
+          {}
         else
           response = {:message => message}
           response
@@ -112,10 +142,68 @@ module Arbiter
         end
       end
 
-      #def stop_daemon()
-        # TO DO
-      #end
+      def stop_daemon()
+        pid = File.read(@pidfile_path).to_i
+        Process.kill("HUP", pid)
+      end
 
+      def container_running?(name)
+        true if ::Docker::Container.get(name) rescue false
+      end
+
+      def start_daemon_docker(name, port = '50051')
+        # remove the container if already running
+        stop_daemon_docker(name)
+        # create the container
+        container = ::Docker::Container.create(
+          'Image' => name,
+          'name' => name,
+          'ExposedPorts' => { '50051/tcp' => {} },
+          'HostConfig' => {
+            'PortBindings' => {
+              '50051/tcp' => [{ 'HostPort' => port, 'HostIp' => '127.0.0.1' }]
+            },
+            "Binds" => [
+                    "#{MODULE_PATH}:#{MODULE_PATH}"
+                ],
+          }
+        )
+        container.start
+      end
+
+      def stop_daemon_docker(name)
+        if container_running?(name)
+          begin
+            container = ::Docker::Container.get(name)
+            container.stop
+            container.remove
+            true
+          rescue
+            notify_of_error("Failed to remove existing docker container", :missing_params)
+            false
+          end
+        end
+      end
+
+      def port_open?(ip, port, seconds=1)
+        Timeout::timeout(seconds) do
+          begin
+            TCPSocket.new(ip, port).close
+            true
+          rescue Errno::ECONNREFUSED, Errno::EHOSTUNREACH
+            false
+          end
+        end
+      rescue Timeout::Error
+        false
+      end
+
+      def generate_port(ip = '127.0.0.1')
+        range = 50000..60000
+        begin
+          port = rand(range)
+        end unless port_open?(ip, port)
+      end
     end
   end
 end
