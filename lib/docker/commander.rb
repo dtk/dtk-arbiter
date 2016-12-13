@@ -136,6 +136,7 @@ module Arbiter
         cli_args += ' --rm ' if docker_run_params[:rm]
         # set name
         # cli_args += "--name #{docker_run_params[:name]} " if docker_run_params[:name]
+        cli_args += " #{docker_run_params[:arguments]}" if docker_run_params[:arguments]
 
         cli_args
       end
