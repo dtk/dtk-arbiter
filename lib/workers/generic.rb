@@ -17,7 +17,7 @@ module Arbiter
 
       def initialize(message_content, listener)
         super(message_content, listener)
-        require 'byebug'; debugger
+        
 
         @provider_type          = get(:provider_type) || UNKNOWN_PROVIDER
         #@provider_data    = get(:provider_data) || NO_PROVIDER_DATA
@@ -25,7 +25,7 @@ module Arbiter
         @provider_attributes    = @attributes[:provider]
         @instance_attributes    = @attributes[:instance]
         #@version_context     = get(:version_context)
-        @module_info = get(:module_info)
+        @modules = get(:modules)
         @component_name         = get(:component_name)
         # i.e. remove namespace
         @component_name_short   = @component_name.split('::')[1]
@@ -46,7 +46,7 @@ module Arbiter
         git_server = Utils::Config.git_server
 
         # pulling modules and preparing environment for changes
-        response = Utils::Git.pull_modules(get(:version_context), git_server)
+        response = Utils::Git.pull_modules(get(:modules), git_server)
 
         # run the provider
         provider_run_response = run()
@@ -76,7 +76,7 @@ module Arbiter
         #action_attributes_file_path  = "/tmp/dtk-#{@module_name}-attributes-#{Time.now.to_i}"
         #File.open(action_attributes_file_path, 'w') { |file| file.write(action_attributes) }
         #@provider_data.first[:action_attributes_file_path] = action_attributes_file_path
-        
+        require 'byebug'; debugger
         provider_message_hash = @attributes.merge(:component_name => @component_name_short)
         provider_message = provider_message_hash.to_json
 
