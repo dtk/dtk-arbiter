@@ -64,12 +64,17 @@ GEM
       http-cookie (>= 1.0.2, < 2.0)
       mime-types (>= 1.16, < 3.0)
       netrc (~> 0.7)
+    rufus-scheduler (3.3.1)
+      tzinfo
     signet (0.7.3)
       addressable (~> 2.3)
       faraday (~> 0.9)
       jwt (~> 1.5)
       multi_json (~> 1.10)
     sys-proctable (1.0.0)
+    thread_safe (0.3.5)
+    tzinfo (1.2.2)
+      thread_safe (~> 0.1)
     unf (0.1.4)
       unf_ext
     unf_ext (0.0.7.1)
@@ -93,6 +98,7 @@ DEPENDENCIES
   looksee
   parseconfig
   rest-client (= 1.8.0)
+  rufus-scheduler
   sys-proctable
 
 BUNDLED WITH
