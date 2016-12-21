@@ -2,6 +2,7 @@ require 'grpc'
 require 'json'
 require 'socket'
 require 'timeout'
+require 'rufus-scheduler'
 
 require File.expand_path('../../common/worker', __FILE__)
 require File.expand_path('../../dtkarbiterservice_services_pb', __FILE__)
@@ -12,13 +13,32 @@ module Arbiter
     class Worker < Common::Worker
       Log.info "Initializing generic worker"
 
-      MODULE_PATH         = "/usr/share/dtk/modules"
-      NUMBER_OF_RETRIES   = 5
+      include Common::Open3
+
+      MODULE_PATH            = "/usr/share/dtk/modules"
+      NUMBER_OF_RETRIES      = 5
+      DOCKER_GC_IMAGE        = 'dtk/docker-gc'
+      DOCKER_GC_SCHEDULE     = '1d'
+      DOCKER_GC_GRACE_PERIOD = '86400'
+
+      # enable docker garbace collector schedule
+      scheduler = Rufus::Scheduler.new
+
+      scheduler.every DOCKER_GC_SCHEDULE do
+        docker_cli_cmd = "GRACE_PERIOD_SECONDS=#{DOCKER_GC_GRACE_PERIOD} docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v /etc:/etc #{DOCKER_GC_IMAGE}"
+        docker_run_stdout, docker_run_stderr, exit_status, results = capture3_with_timeout(docker_cli_cmd)
+        if exit_status.exitstatus != 0
+         Log.error "Something went wrong while running the Docker garbage collector."
+         Log.error docker_run_stderr
+        end
+      end
+
+      #scheduler.join
 
       def initialize(message_content, listener)
         super(message_content, listener)
 
-
+        #require 'byebug'; debugger
         @provider_type          = get(:provider_type) || UNKNOWN_PROVIDER
         #@provider_data    = get(:provider_data) || NO_PROVIDER_DATA
         @attributes             = get(:attributes)
@@ -28,7 +48,10 @@ module Arbiter
         @modules = get(:modules)
         @component_name         = get(:component_name)
         # i.e. remove namespace
-        @component_name_short   = @component_name.split('::')[1]
+        @module_name = @component_name.split('::')[0]
+
+        @execution_type = get(:execution_environment)[:type]
+        @dockerfile = get(:execution_environment)[:docker_file]
 
         @provider_name_internal = "dtk-provider-#{@provider_type}"
 
@@ -57,15 +80,29 @@ module Arbiter
 
       def run()
         # spin up the provider gRPC server
-        grpc_random_port = generate_port
-        tries ||= NUMBER_OF_RETRIES
-        until (tries -= 1).zero?
-          break if start_daemon
-          sleep 1
-        end
-        unless start_daemon
-          notify_of_error("Failed to start #{provider_type} gRPC daemon", :missing_params)
-          return
+        grpc_random_port = '50051' #generate_port
+         # if docker execution is required
+        # spin up the gRPC daemon in a docker container
+        if ephemeral?
+          docker_image = nil
+          docker_image_tag = @provider_name_internal
+          #dockerfile = message['dockerfile']
+
+          Log.info "Building docker image #{docker_image_tag}"
+          docker_image = ::Docker::Image.build(@dockerfile)
+          docker_image.tag('repo' => docker_image_tag, 'force' => true)
+          start_daemon_docker(docker_image_tag, grpc_random_port.to_s)
+        else
+
+          tries ||= NUMBER_OF_RETRIES
+          until (tries -= 1).zero?
+            break if start_daemon
+            sleep 1
+          end
+          unless start_daemon
+            notify_of_error("Failed to start #{provider_type} gRPC daemon", :missing_params)
+            return
+          end
         end
 
         # send a message to the gRPC provider server/daemon
@@ -76,47 +113,18 @@ module Arbiter
         #action_attributes_file_path  = "/tmp/dtk-#{@module_name}-attributes-#{Time.now.to_i}"
         #File.open(action_attributes_file_path, 'w') { |file| file.write(action_attributes) }
         #@provider_data.first[:action_attributes_file_path] = action_attributes_file_path
-        require 'byebug'; debugger
-        provider_message_hash = @attributes.merge(:component_name => @component_name_short)
+
+        provider_message_hash = @attributes.merge(:component_name => @component_name, :module_name => @module_name)
         provider_message = provider_message_hash.to_json
 
         message = stub.process(Dtkarbiterservice::ProviderMessage.new(message: provider_message)).message
         message = JSON.parse(message)
-        stop_daemon
+        # stop the daemon
+        ephemeral? ? stop_daemon_docker(docker_image_tag) : stop_daemon
 
-        #::Arbiter::Docker::Worker.new({}, self)
+        response = {:message => message}
+        response
 
-        # if provider returns a message saying that docker execution is required
-        # invoke the docker commander
-        if message['execution_type'] = 'ephemeral'
-          docker_image = nil
-          docker_image_tag = @provider_name_internal
-          dockerfile = message['dockerfile']
-          # this will get appended to the ENTRYPOINT in the image
-          # making it the first argument
-          # docker_command = action_attributes_file_path
-
-          # commander = Docker::Commander.new(nil,                  # @docker_image
-          #                                   docker_command,                  # @docker_command,
-          #                                   nil,                  # @puppet_manifest,
-          #                                   'ruby',               # @execution_type,
-          #                                   dockerfile,
-          #                                   @module_name,
-          #                                   {},                  # @docker_run_params,
-          #                                   nil)                  # @dynamic_attributes
-
-          # commander.run()
-
-          # commander.results()
-          Log.info "Building docker image #{docker_image_tag}"
-          docker_image = ::Docker::Image.build(dockerfile)
-          docker_image.tag('repo' => docker_image_tag, 'force' => true)
-          start_daemon_docker(docker_image_tag, grpc_random_port.to_s)
-          {}
-        else
-          response = {:message => message}
-          response
-        end
       end
 
   private
@@ -203,6 +211,10 @@ module Arbiter
         begin
           port = rand(range)
         end unless port_open?(ip, port)
+      end
+
+      def ephemeral?
+        @execution_type == 'ephemeral_container'
       end
     end
   end
