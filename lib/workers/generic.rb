@@ -38,7 +38,6 @@ module Arbiter
       def initialize(message_content, listener)
         super(message_content, listener)
 
-        #require 'byebug'; debugger
         @provider_type          = get(:provider_type) || UNKNOWN_PROVIDER
         #@provider_data    = get(:provider_data) || NO_PROVIDER_DATA
         @attributes             = get(:attributes)
@@ -48,7 +47,7 @@ module Arbiter
         @modules = get(:modules)
         @component_name         = get(:component_name)
         # i.e. remove namespace
-        @module_name = @component_name.split('::')[0]
+        @module_name = @component_name.split(':')[1]
 
         @execution_type = get(:execution_environment)[:type]
         @dockerfile = get(:execution_environment)[:docker_file]
@@ -107,7 +106,6 @@ module Arbiter
 
         # send a message to the gRPC provider server/daemon
         stub = Dtkarbiterservice::ArbiterProvider::Stub.new("localhost:#{grpc_random_port}", :this_channel_is_insecure)
-
         # get action attributes and write them JSON serialized to a file
         #action_attributes = @provider_data.first[:action_attributes].to_json
         #action_attributes_file_path  = "/tmp/dtk-#{@module_name}-attributes-#{Time.now.to_i}"
@@ -177,6 +175,15 @@ module Arbiter
           }
         )
         container.start
+        tries ||= NUMBER_OF_RETRIES
+        until (tries -= 1).zero?
+          sleep 1
+          break if port_open?('127.0.0.1', port)
+        end
+        unless port_open?('127.0.0.1', port)
+          notify_of_error("Failed to start #{@provider_type} docker gRPC daemon", :missing_params)
+          return
+        end
       end
 
       def stop_daemon_docker(name)
