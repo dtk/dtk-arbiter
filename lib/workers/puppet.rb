@@ -58,6 +58,9 @@ module Arbiter
         node_manifest    = get(:node_manifest)
         inter_node_stage = get(:inter_node_stage)
         puppet_version   = get(:puppet_version)
+        # puppet can be executed either from the builtin version installed with omnibus (by default)
+        # or from the pulled module
+        puppet_execution = get(:puppet_execution) || 'omnibus'
 
         if puppet_version
           Log.info("Setting user provided puppet version '#{puppet_version}'")
@@ -76,7 +79,11 @@ module Arbiter
             execute_lines = puppet_manifest || ret_execute_lines(cmps_with_attrs)
             execute_string = execute_lines.join("\n")
 
-            cmd = "/usr/bin/puppet"
+            if puppet_execution == 'module'
+              cmd = "GEM_HOME=#{MODULE_PATH}/puppet #{MODULE_PATH}/puppet/bin/puppet"
+            else
+              cmd = "/usr/bin/puppet"
+            end
 
             temp_run_file.write(execute_string)
             temp_run_file.close
