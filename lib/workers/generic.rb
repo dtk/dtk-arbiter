@@ -161,7 +161,7 @@ module Arbiter
         # remove the container if already running
         stop_daemon_docker(name)
         # if running inside docker, use host volume to mount modules instead of internal module path
-        module_path = ENV['HOST_VOLUME'].nil? ? MODULE_PATH : "#{HOST_VOLUME}/modules"
+        module_path = ENV['HOST_VOLUME'].nil? ? MODULE_PATH : "#{ENV['HOST_VOLUME']}/modules"
         # create the container
         container = ::Docker::Container.create(
           'Image' => name,
