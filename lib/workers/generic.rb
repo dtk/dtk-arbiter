@@ -120,8 +120,8 @@ module Arbiter
         # stop the daemon
         ephemeral? ? stop_daemon_docker(docker_image_tag) : stop_daemon
 
-        response = {:message => message}
-        response
+        message
+        #response
 
       end
 
@@ -160,6 +160,8 @@ module Arbiter
       def start_daemon_docker(name, port = '50051')
         # remove the container if already running
         stop_daemon_docker(name)
+        # if running inside docker, use host volume to mount modules instead of internal module path
+        module_path = ENV['HOST_VOLUME'].nil? ? MODULE_PATH : "#{HOST_VOLUME}/modules"
         # create the container
         container = ::Docker::Container.create(
           'Image' => name,
@@ -170,8 +172,8 @@ module Arbiter
               '50051/tcp' => [{ 'HostPort' => port, 'HostIp' => '127.0.0.1' }]
             },
             "Binds" => [
-                    "#{MODULE_PATH}:#{MODULE_PATH}"
-                ],
+                "#{module_path}:#{MODULE_PATH}"
+              ],
           }
         )
         container.start
