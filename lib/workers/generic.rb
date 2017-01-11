@@ -52,7 +52,7 @@ module Arbiter
         @execution_type = get(:execution_environment)[:type]
         @dockerfile = get(:execution_environment)[:docker_file]
 
-        @provider_name_internal = "dtk-provider-#{@provider_type}"
+        @provider_name_internal = "ruby-#{@provider_type}"
 
         @provider_entrypoint    = "#{MODULE_PATH}/#{@provider_name_internal}/init"
         @pidfile_path           = "/tmp/#{@provider_name_internal}.pid"
