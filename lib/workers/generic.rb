@@ -20,7 +20,6 @@ module Arbiter
       DOCKER_GC_IMAGE        = 'dtk/docker-gc'
       DOCKER_GC_SCHEDULE     = '1d'
       DOCKER_GC_GRACE_PERIOD = '86400'
-      @container_ip = inside_docker? ? get_docker_ip : '127.0.0.1'
 
       # enable docker garbace collector schedule
       scheduler = Rufus::Scheduler.new
@@ -58,7 +57,7 @@ module Arbiter
         @provider_entrypoint    = "#{MODULE_PATH}/#{@provider_name_internal}/init"
         @pidfile_path           = "/tmp/#{@provider_name_internal}.pid"
 
-        #@provider_data.first['module_name'] = @module_name
+        @container_ip = inside_docker? ? get_docker_ip : '127.0.0.1'
 
         # Make sure following is prepared
         FileUtils.mkdir_p(MODULE_PATH, mode: 0755) unless File.directory?(MODULE_PATH)
