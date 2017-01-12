@@ -20,7 +20,7 @@ module Arbiter
       DOCKER_GC_IMAGE        = 'dtk/docker-gc'
       DOCKER_GC_SCHEDULE     = '1d'
       DOCKER_GC_GRACE_PERIOD = '86400'
-      CONTAINER_IP = '172.17.0.1'
+      @container_ip = inside_docker? ? get_docker_ip : '127.0.0.1'
 
       # enable docker garbace collector schedule
       scheduler = Rufus::Scheduler.new
@@ -106,7 +106,7 @@ module Arbiter
         end
 
         # send a message to the gRPC provider server/daemon
-        stub = Dtkarbiterservice::ArbiterProvider::Stub.new("#{CONTAINER_IP}:#{grpc_random_port}", :this_channel_is_insecure)
+        stub = Dtkarbiterservice::ArbiterProvider::Stub.new("#{@container_ip}:#{grpc_random_port}", :this_channel_is_insecure)
         # get action attributes and write them JSON serialized to a file
         #action_attributes = @provider_data.first[:action_attributes].to_json
         #action_attributes_file_path  = "/tmp/dtk-#{@module_name}-attributes-#{Time.now.to_i}"
@@ -170,7 +170,7 @@ module Arbiter
           'ExposedPorts' => { '50051/tcp' => {} },
           'HostConfig' => {
             'PortBindings' => {
-              '50051/tcp' => [{ 'HostPort' => port, 'HostIp' => CONTAINER_IP }]
+              '50051/tcp' => [{ 'HostPort' => port, 'HostIp' => @container_ip }]
             },
             "Binds" => [
                 "#{module_path}:#{MODULE_PATH}"
@@ -181,9 +181,9 @@ module Arbiter
         tries ||= NUMBER_OF_RETRIES
         until (tries -= 1).zero?
           sleep 1
-          break if port_open?(CONTAINER_IP, port)
+          break if port_open?(@container_ip, port)
         end
-        unless port_open?(CONTAINER_IP, port)
+        unless port_open?(@container_ip, port)
           notify_of_error("Failed to start #{@provider_type} docker gRPC daemon", :missing_params)
           return
         end
@@ -225,6 +225,16 @@ module Arbiter
 
       def ephemeral?
         @execution_type == 'ephemeral_container'
+      end
+
+      def get_docker_ip
+        route = `/sbin/ip route`
+        ip = route.split[2]
+        ip
+      end
+
+      def inside_docker?
+        File.exist?('/.dockerenv')
       end
     end
   end
