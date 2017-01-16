@@ -41,7 +41,10 @@ module Arbiter
         @provider_type          = get(:provider_type) || UNKNOWN_PROVIDER
         #@provider_data    = get(:provider_data) || NO_PROVIDER_DATA
         @attributes             = get(:attributes)
+
         @provider_attributes    = @attributes[:provider]
+        raise Arbiter::MissingParams, "Provider attributes missing." unless @provider_attributes
+
         @instance_attributes    = @attributes[:instance]
         #@version_context     = get(:version_context)
         @modules = get(:modules)
@@ -99,7 +102,7 @@ module Arbiter
             sleep 1
           end
           unless start_daemon
-            notify_of_error("Failed to start #{provider_type} gRPC daemon", :missing_params)
+            notify_of_error("Failed to start #{provider_type} gRPC daemon", :abort_action)
             return
           end
         end
@@ -120,9 +123,11 @@ module Arbiter
         # stop the daemon
         ephemeral? ? stop_daemon_docker(docker_image_tag) : stop_daemon
 
-        message
-        #response
+        if message["error"] == "true"
+          notify_of_error("#{@provider_type} provider reported an error with message: #{message["error_message"]}", :abort_action)
+        end
 
+        message
       end
 
   private
@@ -183,7 +188,7 @@ module Arbiter
           break if port_open?(@container_ip, port)
         end
         unless port_open?(@container_ip, port)
-          notify_of_error("Failed to start #{@provider_type} docker gRPC daemon", :missing_params)
+          notify_of_error("Failed to start #{@provider_type} docker gRPC daemon", :abort_action)
           return
         end
       end
@@ -196,7 +201,7 @@ module Arbiter
             container.remove
             true
           rescue
-            notify_of_error("Failed to remove existing docker container", :missing_params)
+            notify_of_error("Failed to remove existing docker container", :abort_action)
             false
           end
         end
