@@ -6,6 +6,7 @@ require 'openssl'
 require File.expand_path('../common/worker', __FILE__)
 require File.expand_path('../common/logger', __FILE__)
 require File.expand_path('../common/error', __FILE__)
+require File.expand_path('../common/sanitize', __FILE__)
 require File.expand_path('../common/mixin/open3', __FILE__)
 require File.expand_path('../utils/ssh_cipher', __FILE__)
 
@@ -77,7 +78,7 @@ module Arbiter
         end
 
         # determine the worker to handle payload
-        Log.debug "Received message: #{original_message}"
+        Log.debug "Received message: #{Sanitize.sanitize_message(original_message)}"
         target_instance = worker_factory(original_message)
 
         # no worker?! drop the message
