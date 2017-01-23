@@ -38,6 +38,8 @@ module Arbiter
       def initialize(message_content, listener)
         super(message_content, listener)
 
+        @protocol_version       = get(:protocol_version) || 0
+        
         @provider_type          = get(:provider_type) || UNKNOWN_PROVIDER
         #@provider_data    = get(:provider_data) || NO_PROVIDER_DATA
         @attributes             = get(:attributes)
@@ -109,14 +111,8 @@ module Arbiter
 
         # send a message to the gRPC provider server/daemon
         stub = Dtkarbiterservice::ArbiterProvider::Stub.new("#{@container_ip}:#{grpc_random_port}", :this_channel_is_insecure)
-        # get action attributes and write them JSON serialized to a file
-        #action_attributes = @provider_data.first[:action_attributes].to_json
-        #action_attributes_file_path  = "/tmp/dtk-#{@module_name}-attributes-#{Time.now.to_i}"
-        #File.open(action_attributes_file_path, 'w') { |file| file.write(action_attributes) }
-        #@provider_data.first[:action_attributes_file_path] = action_attributes_file_path
 
-        provider_message_hash = @attributes.merge(:component_name => @component_name, :module_name => @module_name)
-        provider_message = provider_message_hash.to_json
+        provider_message = generate_provider_message(@attributes, {:component_name => @component_name, :module_name => @module_name}, @protocol_version) #provider_message_hash.to_json
 
         message = stub.process(Dtkarbiterservice::ProviderMessage.new(message: provider_message)).message
         message = JSON.parse(message)
@@ -239,6 +235,18 @@ module Arbiter
 
       def inside_docker?
         File.exist?('/.dockerenv')
+      end
+
+      def generate_provider_message(attributes, merge_hash, protocol_version)
+        case protocol_version
+        when 1
+          converted_attributes = attributes.inject({}) do |h, (type, attributes_hash)|
+            h.merge(type => attributes_hash.inject({}) { |h, (name, info)| h.merge(name => info[:value]) })
+          end
+          converted_attributes.merge(merge_hash).to_json
+        else
+          attributes.merge(merge_hash).to_json
+        end
       end
     end
   end
