@@ -82,7 +82,8 @@ module Arbiter
 
       def git_command_opts(opts={})
         ret = {:raise => true, :timeout => 60}
-        ret.merge!(:chdir => @repo_dir) unless opts[:no_chdir]
+        # remove :chdir as it's incompatible with gitlab-grit
+        #ret.merge!(:chdir => @repo_dir) unless opts[:no_chdir]
       end
 
       def git_command()

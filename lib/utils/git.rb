@@ -95,6 +95,17 @@ module Arbiter
       end
 
       def self.pull_module(repo_dir,branch,opts={})
+        if File.exist?(repo_dir)
+          # check if local repo is identical to the remote one
+          local_repo = ::Grit::Repo.new(repo_dir)
+          local_sha = local_repo.commits("HEAD").first.id
+          local_repo_unchanged = local_repo.status.changed.empty?
+          # we don't need to clone if the local SHA is identical to the remote one
+          # unless the local repo has changes
+          # TO-DO: consider making the local repo changed check optional via config gile
+          # to allow testing by making local changes
+          return true if (local_sha == opts[:sha]) && local_repo_unchanged
+        end
         git_repo = ::Arbiter::Common::GitClient.new(repo_dir)
         git_repo.pull_and_checkout_branch?(branch,opts)
       end
