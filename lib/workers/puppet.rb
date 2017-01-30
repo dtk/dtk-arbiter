@@ -44,6 +44,7 @@ module Arbiter
         git_server = Utils::Config.git_server
 
         # pulling modules and preparing environment for changes
+        Log.info 'Pulling modules from DTK'
         response = Utils::Git.pull_modules(get(:version_context), git_server, PUPPET_MODULE_PATH)
 
         # finally run puppet execution
