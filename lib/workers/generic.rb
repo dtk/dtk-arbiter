@@ -11,7 +11,6 @@ require File.expand_path('../../docker/commander', __FILE__)
 module Arbiter
   module Generic
     class Worker < Common::Worker
-      Log.info "Initializing generic worker"
 
       include Common::Open3
 
@@ -37,6 +36,8 @@ module Arbiter
 
       def initialize(message_content, listener)
         super(message_content, listener)
+
+        Log.info "Initializing generic worker"
 
         @protocol_version       = get(:protocol_version) || 0
         
@@ -73,6 +74,7 @@ module Arbiter
         git_server = Utils::Config.git_server
 
         # pulling modules and preparing environment for changes
+        Log.info 'Pulling modules from DTK'
         response = Utils::Git.pull_modules(get(:modules), git_server)
 
         # run the provider
@@ -83,6 +85,7 @@ module Arbiter
       end
 
       def run()
+        Log.info 'Starting generic worker run'
         # spin up the provider gRPC server
         grpc_random_port = '50051' #generate_port
          # if docker execution is required
@@ -95,6 +98,7 @@ module Arbiter
           Log.info "Building docker image #{docker_image_tag}"
           docker_image = ::Docker::Image.build(@dockerfile)
           docker_image.tag('repo' => docker_image_tag, 'force' => true)
+          Log.info "Starting docker container #{docker_image_tag}"
           start_daemon_docker(docker_image_tag, grpc_random_port.to_s)
         else
 
@@ -114,7 +118,9 @@ module Arbiter
 
         provider_message = generate_provider_message(@attributes, {:component_name => @component_name, :module_name => @module_name}, @protocol_version) #provider_message_hash.to_json
 
+        Log.info 'Sending a message to the gRPC daemon'
         message = stub.process(Dtkarbiterservice::ProviderMessage.new(message: provider_message)).message
+        Log.info 'gRPC daemon response received'
         message = JSON.parse(message)
         # stop the daemon
         ephemeral? ? stop_daemon_docker(docker_image_tag) : stop_daemon

@@ -100,7 +100,7 @@ module Arbiter
           Log.info "Arbiter worker has been queued #{target_instance} with request id #{target_instance.request_id}, waiting for execution ..."
           @puppey_apply_queue.push(target_instance)
         else
-          Log.info "Arbiter worker has been choosen #{target_instance} with request id #{target_instance.request_id}, starting work ..."
+          Log.info "Arbiter worker has been chosen #{target_instance} with request id #{target_instance.request_id}, starting work ..."
           run_task_concurrently(target_instance)
         end
       end
