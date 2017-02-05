@@ -14,11 +14,13 @@ module Arbiter
 
       include Common::Open3
 
-      MODULE_PATH            = "/usr/share/dtk/modules"
-      NUMBER_OF_RETRIES      = 5
-      DOCKER_GC_IMAGE        = 'dtk/docker-gc'
-      DOCKER_GC_SCHEDULE     = '1d'
-      DOCKER_GC_GRACE_PERIOD = '86400'
+      BASE_DTK_DIR                = '/usr/share/dtk'
+      MODULE_PATH                 = "#{BASE_DTK_DIR}/modules"
+      SERVICE_INSTANCES_BASE_PATH = "#{BASE_DTK_DIR}/service_instances"
+      NUMBER_OF_RETRIES           = 5
+      DOCKER_GC_IMAGE             = 'dtk/docker-gc'
+      DOCKER_GC_SCHEDULE          = '1d'
+      DOCKER_GC_GRACE_PERIOD      = '86400'
 
       # enable docker garbace collector schedule
       scheduler = Rufus::Scheduler.new
@@ -39,37 +41,35 @@ module Arbiter
 
         Log.info "Initializing generic worker"
 
-        @protocol_version       = get(:protocol_version) || 0
-        
+        @protocol_version        = get(:protocol_version) || 0
+
         @provider_type          = get(:provider_type) || UNKNOWN_PROVIDER
-        #@provider_data    = get(:provider_data) || NO_PROVIDER_DATA
+        #@provider_data         = get(:provider_data) || NO_PROVIDER_DATA
+
+        @service_instance       = get(:service_instance)
+        @service_instance_dir   = "#{SERVICE_INSTANCES_BASE_PATH}/#{@service_instance}"
+
         @attributes             = get(:attributes)
-
-        @provider_attributes    = @attributes[:provider]
-        raise Arbiter::MissingParams, "Provider attributes missing." unless @provider_attributes
-
+        @provider_attributes    = @attributes[:provider] || raise(Arbiter::MissingParams, "Provider attributes missing.")
         @instance_attributes    = @attributes[:instance]
-        #@version_context     = get(:version_context)
-        @modules = get(:modules)
+
+        @modules                = get(:modules)
         @component_name         = get(:component_name)
-        # i.e. remove namespace
-        @module_name = @component_name.split(':')[1]
+        @module_name            = @component_name.split(':')[1] # i.e. remove namespace
 
-        @execution_type = get(:execution_environment)[:type]
-        @dockerfile = get(:execution_environment)[:docker_file]
-
+        @execution_type         = get(:execution_environment)[:type]
+        @dockerfile             = get(:execution_environment)[:docker_file]
         @provider_name_internal = "#{@provider_type}-provider"
-
         @provider_entrypoint    = "#{MODULE_PATH}/#{@provider_name_internal}/init"
         @pidfile_path           = "/tmp/#{@provider_name_internal}.pid"
-
-        @container_ip = inside_docker? ? get_docker_ip : '127.0.0.1'
+        @container_ip           = inside_docker? ? get_docker_ip : '127.0.0.1'
 
         # Make sure following is prepared
+        FileUtils.mkdir_p(@service_instance_dir, mode: 0755) unless File.directory?(@service_instance_dir)
         FileUtils.mkdir_p(MODULE_PATH, mode: 0755) unless File.directory?(MODULE_PATH)
       end
 
-      def process()
+      def process
         # we need this to pull our modules
         git_server = Utils::Config.git_server
 
@@ -78,13 +78,13 @@ module Arbiter
         response = Utils::Git.pull_modules(get(:modules), git_server)
 
         # run the provider
-        provider_run_response = run()
+        provider_run_response = run
         #provider_run_response.merge!(success_response)
 
         notify(provider_run_response)
       end
 
-      def run()
+      def run
         Log.info 'Starting generic worker run'
         # spin up the provider gRPC server
         grpc_random_port = '50051' #generate_port
@@ -134,7 +134,7 @@ module Arbiter
 
   private
 
-      def start_daemon()
+      def start_daemon
         # check if provider daemon is already running
         if File.exist?(@pidfile_path)
           pid = File.read(@pidfile_path).to_i
@@ -155,7 +155,7 @@ module Arbiter
         end
       end
 
-      def stop_daemon()
+      def stop_daemon
         pid = File.read(@pidfile_path).to_i
         Process.kill("HUP", pid)
       end
@@ -179,7 +179,8 @@ module Arbiter
               '50051/tcp' => [{ 'HostPort' => port, 'HostIp' => @container_ip }]
             },
             "Binds" => [
-                "#{module_path}:#{MODULE_PATH}"
+                "#{module_path}:#{MODULE_PATH}",
+                "#{@service_instance_dir}:#{SERVICE_INSTANCES_BASE_PATH}"
               ],
           }
         )
