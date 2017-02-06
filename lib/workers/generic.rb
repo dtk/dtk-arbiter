@@ -123,7 +123,7 @@ module Arbiter
         Log.info 'gRPC daemon response received'
         message = JSON.parse(message)
         # stop the daemon
-        ephemeral? ? stop_daemon_docker(docker_image_tag) : stop_daemon
+#        ephemeral? ? stop_daemon_docker(docker_image_tag) : stop_daemon
 
         if message["error"] == "true"
           notify_of_error("#{@provider_type} provider reported an error with message: #{message["error_message"]}", :abort_action)
@@ -173,10 +173,14 @@ module Arbiter
         container = ::Docker::Container.create(
           'Image' => name,
           'name' => name,
-          'ExposedPorts' => { '50051/tcp' => {} },
+          'ExposedPorts' => { '50051/tcp' => {}, '4000/tcp' => {}, '4001/tcp' => {} },
+          'Tty' => true,
+          'OpenStdin' => true,
           'HostConfig' => {
             'PortBindings' => {
-              '50051/tcp' => [{ 'HostPort' => port, 'HostIp' => @container_ip }]
+              '50051/tcp' => [{ 'HostPort' => port, 'HostIp' => @container_ip }],
+              '4000/tcp' => [{ 'HostPort' => '4000'}],
+              '4001/tcp' => [{ 'HostPort' => '4001'}],
             },
             "Binds" => [
                 "#{module_path}:#{MODULE_PATH}",
