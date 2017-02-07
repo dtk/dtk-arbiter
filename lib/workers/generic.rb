@@ -4,9 +4,9 @@ require 'socket'
 require 'timeout'
 require 'rufus-scheduler'
 
-require File.expand_path('../../common/worker', __FILE__)
-require File.expand_path('../../dtkarbiterservice_services_pb', __FILE__)
-require File.expand_path('../../docker/commander', __FILE__)
+require_relative('../common/worker')
+require_relative('../dtkarbiterservice_services_pb')
+require_relative('../docker/commander')
 
 module Arbiter
   module Generic
@@ -15,8 +15,8 @@ module Arbiter
       include Common::Open3
 
       BASE_DTK_DIR                = '/usr/share/dtk'
-      MODULE_PATH                 = "#{BASE_DTK_DIR}/modules"
-      SERVICE_INSTANCES_BASE_PATH = "#{BASE_DTK_DIR}/service_instances"
+      MODULE_DIR                 = "#{BASE_DTK_DIR}/modules"
+      SERVICE_INSTANCES_DIR = "#{BASE_DTK_DIR}/service_instances"
       NUMBER_OF_RETRIES           = 5
       DOCKER_GC_IMAGE             = 'dtk/docker-gc'
       DOCKER_GC_SCHEDULE          = '1d'
@@ -47,7 +47,6 @@ module Arbiter
         #@provider_data         = get(:provider_data) || NO_PROVIDER_DATA
 
         @service_instance       = get(:service_instance)
-        @service_instance_dir   = "#{SERVICE_INSTANCES_BASE_PATH}/#{@service_instance}"
 
         @attributes             = get(:attributes)
         @provider_attributes    = @attributes[:provider] || raise(Arbiter::MissingParams, "Provider attributes missing.")
@@ -60,13 +59,13 @@ module Arbiter
         @execution_type         = get(:execution_environment)[:type]
         @dockerfile             = get(:execution_environment)[:docker_file]
         @provider_name_internal = "#{@provider_type}-provider"
-        @provider_entrypoint    = "#{MODULE_PATH}/#{@provider_name_internal}/init"
+        @provider_entrypoint    = "#{MODULE_DIR}/#{@provider_name_internal}/init"
         @pidfile_path           = "/tmp/#{@provider_name_internal}.pid"
         @container_ip           = inside_docker? ? get_docker_ip : '127.0.0.1'
 
         # Make sure following is prepared
-        FileUtils.mkdir_p(@service_instance_dir, mode: 0755) unless File.directory?(@service_instance_dir)
-        FileUtils.mkdir_p(MODULE_PATH, mode: 0755) unless File.directory?(MODULE_PATH)
+        FileUtils.mkdir_p(SERVICE_INSTANCES_DIR, mode: 0755) unless File.directory?(SERVICE_INSTANCES_DIR)
+        FileUtils.mkdir_p(MODULE_DIR, mode: 0755) unless File.directory?(MODULE_DIR)
       end
 
       def process
@@ -123,7 +122,7 @@ module Arbiter
         Log.info 'gRPC daemon response received'
         message = JSON.parse(message)
         # stop the daemon
-#        ephemeral? ? stop_daemon_docker(docker_image_tag) : stop_daemon
+        ephemeral? ? stop_daemon_docker(docker_image_tag) : stop_daemon
 
         if message["error"] == "true"
           notify_of_error("#{@provider_type} provider reported an error with message: #{message["error_message"]}", :abort_action)
@@ -132,8 +131,8 @@ module Arbiter
         message
       end
 
-  private
-
+      private
+      
       def start_daemon
         # check if provider daemon is already running
         if File.exist?(@pidfile_path)
@@ -154,40 +153,22 @@ module Arbiter
           false
         end
       end
-
+      
       def stop_daemon
         pid = File.read(@pidfile_path).to_i
         Process.kill("HUP", pid)
       end
-
+      
       def container_running?(name)
         true if ::Docker::Container.get(name) rescue false
       end
-
+      
       def start_daemon_docker(name, port = '50051')
         # remove the container if already running
         stop_daemon_docker(name)
-        # if running inside docker, use host volume to mount modules instead of internal module path
-        module_path = ENV['HOST_VOLUME'].nil? ? MODULE_PATH : "#{ENV['HOST_VOLUME']}/modules"
-        # create the container
-        container = ::Docker::Container.create(
-          'Image' => name,
-          'name' => name,
-          'ExposedPorts' => { '50051/tcp' => {}, '4000/tcp' => {}, '4001/tcp' => {} },
-          'Tty' => true,
-          'OpenStdin' => true,
-          'HostConfig' => {
-            'PortBindings' => {
-              '50051/tcp' => [{ 'HostPort' => port, 'HostIp' => @container_ip }],
-              '4000/tcp' => [{ 'HostPort' => '4000'}],
-              '4001/tcp' => [{ 'HostPort' => '4001'}],
-            },
-            "Binds" => [
-                "#{module_path}:#{MODULE_PATH}",
-                "#{@service_instance_dir}:#{SERVICE_INSTANCES_BASE_PATH}"
-              ],
-          }
-        )
+  
+        container = ::Docker::Container.create(container_params_hash(name, port))
+
         container.start
         tries ||= NUMBER_OF_RETRIES
         until (tries -= 1).zero?
@@ -199,6 +180,25 @@ module Arbiter
           return
         end
       end
+
+      def container_params_hash(name, port)
+        # if running inside docker, use host volume to mount modules instead of internal module path
+        module_dir = ENV['HOST_VOLUME'].nil? ? MODULE_DIR : "#{ENV['HOST_VOLUME']}/modules"
+        host_config = {
+          'PortBindings' => { '50051/tcp' => [{ 'HostPort' => port, 'HostIp' => @container_ip }] },
+          'Binds'        => ["#{module_dir}:#{MODULE_DIR}", "#{SERVICE_INSTANCES_DIR}:#{SERVICE_INSTANCES_DIR}"]
+        }
+
+
+        {
+          'Image'        => name,
+          'name'         => name,
+          'Tty'          => true, # needed to run byebug when attach
+          'OpenStdin'    => true, # needed to run byebug when attach
+          'ExposedPorts' => { '50051/tcp' => {} },
+          'HostConfig'   => host_config
+        }
+      end  
 
       def stop_daemon_docker(name)
         if container_running?(name)
