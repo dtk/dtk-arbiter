@@ -1,0 +1,10 @@
+/var/log/dtk/* {
+        firstaction
+          /usr/bin/find /var/log/dtk/* -mindepth 1 -type d -mtime +30 -prune -exec rm -rf '{}' \;
+        endscript
+        missingok
+        weekly
+        copytruncate
+        rotate 4
+        compress
+}
