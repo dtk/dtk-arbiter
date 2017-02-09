@@ -7,11 +7,9 @@ require 'rufus-scheduler'
 require_relative('../common/worker')
 require_relative('../dtkarbiterservice_services_pb')
 require_relative('../docker/commander')
-
-module Arbiter
-  module Generic
-    class Worker < Common::Worker
-
+module DTK
+  class Arbiter::Worker
+    class Generic < self
       include Common::Open3
 
       BASE_DTK_DIR                = '/usr/share/dtk'
@@ -44,10 +42,9 @@ module Arbiter
         @protocol_version        = get(:protocol_version) || 0
 
         @provider_type          = get(:provider_type) || UNKNOWN_PROVIDER
-        #@provider_data         = get(:provider_data) || NO_PROVIDER_DATA
 
         @service_instance       = get(:service_instance)
-
+        @component              = get
         @attributes             = get(:attributes)
         @provider_attributes    = @attributes[:provider] || raise(Arbiter::MissingParams, "Provider attributes missing.")
         @instance_attributes    = @attributes[:instance]
@@ -67,6 +64,7 @@ module Arbiter
         FileUtils.mkdir_p(SERVICE_INSTANCES_DIR, mode: 0755) unless File.directory?(SERVICE_INSTANCES_DIR)
         FileUtils.mkdir_p(MODULE_DIR, mode: 0755) unless File.directory?(MODULE_DIR)
       end
+      private :initialize
 
       def process
         # we need this to pull our modules

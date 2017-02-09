@@ -1,7 +1,6 @@
-module Arbiter
-  module System
-    class Worker < Common::Worker
-
+module DTK
+  class Arbiter::Worker
+    class System < self
       # number of lines that will be returned on first request
       BATCH_SIZE_OF_LOG = 50
 
@@ -10,8 +9,9 @@ module Arbiter
       def initialize(message_content, listener)
         super(message_content, listener)
       end
+      private :initialize
 
-      def process()
+      def process
         return notify_of_error("System Worker needs action name to proceed, aborting processing!", :missing_params) unless action_name
         return notify_of_error(ErrorFormatter.action_not_defined(action_name, self), :missing_params) unless self.respond_to?(action_name)
 

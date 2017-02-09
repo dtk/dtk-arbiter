@@ -6,9 +6,9 @@ require 'eventmachine'
 require 'daemons'
 require 'optparse'
 
-require File.expand_path('lib/listener', File.dirname(__FILE__))
-require File.expand_path('lib/utils/config', File.dirname(__FILE__))
-require File.expand_path('lib/common/logger', File.dirname(__FILE__))
+require_relative('lib/listener')
+require_relative('lib/utils/config')
+require_relative('lib/common/logger')
 
 
 # Parsing OPTIONS

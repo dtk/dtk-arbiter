@@ -7,10 +7,9 @@ require File.expand_path('../../utils/puppet_runner', __FILE__)
 require File.expand_path('../../utils/git', __FILE__)
 require File.expand_path('../../puppet/dynamic_attributes', __FILE__)
 
-module Arbiter
-  module Puppet
-    class Worker < Common::Worker
-
+module DTK
+  class Arbiter::Worker
+    class Puppet < self
       UNKNOWN_SERVICE = 'UNKNOWN'
       NUMBER_OF_RETRIES = 5
 
@@ -38,8 +37,9 @@ module Arbiter
         FileUtils.mkdir_p(MODULE_PATH, mode: 0755) unless File.directory?(MODULE_PATH)
         FileUtils.mkdir_p(PUPPET_LOG_TASK, mode: 0755)    unless File.directory?(PUPPET_LOG_TASK)
       end
+      private :initialize
 
-      def process()
+      def process
         # we need this to pull our modules
         git_server = Utils::Config.git_server
 
@@ -48,13 +48,13 @@ module Arbiter
         response = Utils::Git.pull_modules(get(:version_context), git_server, PUPPET_MODULE_PATH)
 
         # finally run puppet execution
-        puppet_run_response = run()
+        puppet_run_response = run
         puppet_run_response.merge!(success_response)
 
         notify(puppet_run_response)
       end
 
-      def run()
+      def run
         cmps_with_attrs  = get(:components_with_attributes)
         node_manifest    = get(:node_manifest)
         inter_node_stage = get(:inter_node_stage)

@@ -1,22 +1,46 @@
-module Arbiter
-  module Common
+module DTK
+  module Arbiter
     class Worker
+      Dir["worker/*.rb"].each do |file_path|
+        require File.expand_path("../../#{file_path}", __FILE__)
+      end
 
       attr_reader :request_id
 
       def initialize(message, listener)
-        @listener = listener
+        @listener         = listener
         @received_message = message
-        @agent_name  = @received_message[:agent]
-        @top_task_id = @received_message[:top_task_id]
-        @task_id     = @received_message[:task_id]
-        @module_name = @received_message[:module_name]
-        @action_name = @received_message[:method] ? @received_message[:method].to_sym : nil
-        @request_id  = @received_message[:request_id]
-        @service_name = @received_message[:service_name]
+        @agent_name       = @received_message[:agent]
+        @top_task_id      = @received_message[:top_task_id]
+        @task_id          = @received_message[:task_id]
+        @module_name      = @received_message[:module_name]
+        @action_name      = @received_message[:method] ? @received_message[:method].to_sym : nil
+        @request_id       = @received_message[:request_id]
+        @service_name     = @received_message[:service_name]
+      end
+      private :initialize
+
+      def self.create?(message, listener)
+        target_agent = message[:agent] || 'action'
+        case target_agent
+        when 'generic_worker'
+          Generic.new(message, listener)
+        when 'secure_agent', 'git_access', 'ssh_agent'
+          Secure.new(message, listener)
+        when 'action_agent'
+          Action.new(message, listener)
+        when 'system_agent', 'netstat', 'ps', 'tail'
+          System.new(message, listener)
+        when 'discovery'
+          Discovery.new(message, listener)
+        when 'puppet_apply'
+          Puppet.new(message, listener)
+        when 'docker_agent'
+          Docker.new(message, listener)
+        end
       end
 
-      def process()
+      def process
         raise "You need to override this method"
       end
 

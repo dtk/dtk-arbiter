@@ -6,10 +6,9 @@ require File.expand_path('../../utils/git', __FILE__)
 
 Dir[File.dirname(__FILE__) + '../docker/*.rb'].each { |file| require file }
 
-module Arbiter
-  module Docker
-    class Worker < Common::Worker
-
+module DTK
+  class Arbiter::Worker
+    class Docker < self
       attr_reader :process_pool
 
       def initialize(message_content, listener)
@@ -27,8 +26,9 @@ module Arbiter
         @dynamic_attributes = @received_message[:dynamic_attributes]
         # @image = Docker::Image.create('fromImage' => @docker_image )
       end
+      private :initialize
 
-      def process()
+      def process
         # we need this to pull our modules
         git_server = Utils::Config.git_server
 
@@ -44,9 +44,9 @@ module Arbiter
 
         @commander = Docker::Commander.new(@docker_image, @docker_command, @puppet_manifest, @execution_type, @dockerfile, @module_name, @docker_run_params, @dynamic_attributes)
 
-        @commander.run()
+        @commander.run
 
-        notify(@commander.results())
+        notify(@commander.results)
       end
 
     end

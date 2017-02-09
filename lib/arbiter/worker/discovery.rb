@@ -1,7 +1,6 @@
-module Arbiter
-  module Discovery
-    class Worker < Common::Worker
-
+module DTK
+  class Arbiter::Worker
+    class Discovery < self
       attr_reader :process_pool
 
       def initialize(message_content, listener)

@@ -1,10 +1,8 @@
 require File.expand_path('../../utils/puppet_runner', __FILE__)
 
-
-module Arbiter
-  module Secure
-    class Worker < Common::Worker
-
+module DTK
+  class Arbiter::Worker
+    class Secure < self
       SSH_AUTH_KEYS_FILE_NAME    = "authorized_keys"
 
       attr_reader :process_pool
@@ -12,8 +10,9 @@ module Arbiter
       def initialize(message_content, listener)
         super(message_content, listener)
       end
+      private :initialize
 
-      def process()
+      def process
         return notify_of_error("System Worker needs action name to proceed, aborting processing!", :missing_params) unless action_name
         return notify_of_error(ErrorFormatter.action_not_defined(action_name, self), :missing_params) unless self.respond_to?(action_name)
 
@@ -132,7 +131,7 @@ module Arbiter
       end
 
       def normalize_rsa_pub_key(rsa_pub_key)
-        rsa_pub_key.strip!()
+        rsa_pub_key.strip!
         rsa_pub_key.gsub!(/.* (.*) .*/,'\1')
         rsa_pub_key
       end
