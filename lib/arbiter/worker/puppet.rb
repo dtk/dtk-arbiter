@@ -41,7 +41,7 @@ module DTK
 
       def process
         # we need this to pull our modules
-        git_server = Utils::Config.git_server
+        git_server = Config.git_server
 
         # pulling modules and preparing environment for changes
         Log.info 'Pulling modules from DTK'

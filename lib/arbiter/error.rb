@@ -1,4 +1,4 @@
-module Arbiter
+module DTK::Arbiter
   class ErrorFormatter
     class << self
 

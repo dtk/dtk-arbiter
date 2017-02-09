@@ -1,10 +1,9 @@
 require 'timeout'
 require 'open3'
 
-module Arbiter
-  module Common
-    module Open3
-
+module DTK::Arbiter; module Common
+  module Open3
+    module Mixin
       STREAM_TIMEOUT  = 5
 
       # Running puppet directly on system and from ruby process has proven different. Following is set of environment variables
@@ -100,4 +99,4 @@ module Arbiter
 
     end
   end
-end
+end; end

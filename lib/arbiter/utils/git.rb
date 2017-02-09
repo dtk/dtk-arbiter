@@ -1,12 +1,11 @@
-require 'rubygems'
-require 'grit'
-require File.expand_path('../common/gitclient',File.dirname(__FILE__))
+require 'rubygems' #TODO: is this needed?
 
 DTK_MODULE_PATH  = "/usr/share/dtk/modules"
 
-module Arbiter
+module DTK::Arbiter
   module Utils
     class Git
+      require_relative('git/client')
 
       NUMBER_OF_RETRIES = 5
 
@@ -16,7 +15,7 @@ module Arbiter
 
       def self.clean_and_clone_module(repo_dir,remote_repo,branch,opts={})
         FileUtils.rm_rf repo_dir if File.exists?(repo_dir)
-        git_repo = Common::GitClient.new(repo_dir, :create => true)
+        git_repo = Client.new(repo_dir, :create => true)
         git_repo.clone_branch(remote_repo,branch,opts)
         true
       end
@@ -106,13 +105,13 @@ module Arbiter
           # to allow testing by making local changes
           return true if (local_sha == opts[:sha]) && local_repo_unchanged
         end
-        git_repo = ::Arbiter::Common::GitClient.new(repo_dir)
+        git_repo = Client.new(repo_dir)
         git_repo.pull_and_checkout_branch?(branch,opts)
       end
 
       def self.clean_and_clone_module(repo_dir,remote_repo,branch,opts={})
         FileUtils.rm_rf repo_dir if File.exists?(repo_dir)
-        git_repo = ::Arbiter::Common::GitClient.new(repo_dir,:create=>true)
+        git_repo = Client.new(repo_dir,:create=>true)
         git_repo.clone_branch(remote_repo,branch,opts)
       end
 

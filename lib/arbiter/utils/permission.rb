@@ -1,4 +1,4 @@
-module Arbiter
+module DTK::Arbiter
   module Utils
     class Permission
 

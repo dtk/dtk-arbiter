@@ -5,7 +5,7 @@ require 'fileutils'
 require 'json'
 require 'ap'
 
-module Arbiter
+module DTK::Arbiter
   class Log
     include Singleton
 

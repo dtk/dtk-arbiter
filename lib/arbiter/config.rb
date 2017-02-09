@@ -1,10 +1,9 @@
 require 'parseconfig'
 require 'singleton'
 require 'open-uri'
-require 'timeout'
 
-module Arbiter
-  module Utils
+module DTK
+  module Arbiter
     class Config
 
       DEFAULT_ARBITER_CFG    = '/etc/dtk/arbiter.cfg'

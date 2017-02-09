@@ -6,15 +6,14 @@ require 'yaml'
 # encrypt larger sets of data. Inspired by: http://stuff-things.net/2008/02/05/encrypting-lots-of-sensitive-data-with-ruby-on-rails/
 #
 
-
-module Arbiter
+module DTK::Arbiter
   module Utils
     class SSHCipher
 
       def self.decrypt_sensitive(encrypted_data, encrypted_key, encrypted_iv)
         if encrypted_data
-          private_key = OpenSSL::PKey::RSA.new(File.read(Utils::Config.private_key),'')
-          cipher = OpenSSL::Cipher::Cipher.new('aes-256-cbc')
+          private_key = ::OpenSSL::PKey::RSA.new(File.read(Config.private_key),'')
+          cipher = ::OpenSSL::Cipher::Cipher.new('aes-256-cbc')
           cipher.decrypt
           cipher.key = private_key.private_decrypt(encrypted_key)
           cipher.iv = private_key.private_decrypt(encrypted_iv)
@@ -22,7 +21,7 @@ module Arbiter
           decrypted_data = cipher.update(encrypted_data)
           decrypted_data << cipher.final
 
-          YAML.load(decrypted_data)
+          ::YAML.load(decrypted_data)
         else
           ''
         end
@@ -33,8 +32,8 @@ module Arbiter
       def self.encrypt_sensitive(message)
         plain_data = message.to_yaml
         if !plain_data.empty?
-          public_key = OpenSSL::PKey::RSA.new(File.read(Utils::Config.private_key),'').public_key
-          cipher = OpenSSL::Cipher::Cipher.new('aes-256-cbc')
+          public_key = ::OpenSSL::PKey::RSA.new(File.read(Config.private_key),'').public_key
+          cipher = ::OpenSSL::Cipher::Cipher.new('aes-256-cbc')
           cipher.encrypt
           cipher.key = random_key = cipher.random_key
           cipher.iv = random_iv = cipher.random_iv

@@ -1,9 +1,5 @@
 require 'docker'
 
-require File.expand_path('../../common/worker', __FILE__)
-require File.expand_path('../../docker/commander', __FILE__)
-require File.expand_path('../../utils/git', __FILE__)
-
 Dir[File.dirname(__FILE__) + '../docker/*.rb'].each { |file| require file }
 
 module DTK
@@ -30,7 +26,7 @@ module DTK
 
       def process
         # we need this to pull our modules
-        git_server = Utils::Config.git_server
+        git_server = Config.git_server
 
         # pulling modules and preparing environment for changes
         response = Utils::Git.pull_modules(@version_context, git_server) if @version_context
