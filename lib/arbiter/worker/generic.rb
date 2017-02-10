@@ -44,13 +44,14 @@ module DTK::Arbiter
 
         @service_instance       = get(:service_instance)
         @component              = get(:component)
+        @module_name            = @component[:module_name]
+        @component_name         = "#{@component[:namespace]}:#{@module_name}"
+
         @attributes             = get(:attributes)
         @provider_attributes    = @attributes[:provider] || raise(Arbiter::MissingParams, "Provider attributes missing.")
         @instance_attributes    = @attributes[:instance]
 
         @modules                = get(:modules)
-        @component_name         = get(:component_name)
-        @module_name            = @component_name.split(':')[1] # i.e. remove namespace
 
         @execution_type         = get(:execution_environment)[:type]
         @dockerfile             = get(:execution_environment)[:docker_file]
