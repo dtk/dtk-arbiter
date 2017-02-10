@@ -1,5 +1,5 @@
-module DTK
-  class Arbiter::Worker
+module DTK::Arbiter
+  class Worker
     class System < self
       # number of lines that will be returned on first request
       BATCH_SIZE_OF_LOG = 50

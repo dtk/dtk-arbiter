@@ -2,7 +2,7 @@ module DTK::Arbiter
   module Utils
     class PuppetRunner
 
-      extend ::Arbiter::Common::Open3
+      extend CommonMixin::Open3
 
       PUPPET_RUNNABLE = '/usr/bin/puppet'
       STDOUT_REDIRECT = ' 2>&1'

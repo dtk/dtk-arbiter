@@ -1,26 +1,26 @@
 require 'timeout'
 require 'open3'
 
-module DTK::Arbiter; module Common
-  module Open3
-    module Mixin
+module DTK::Arbiter
+  module CommonMixin
+    module Open3
       STREAM_TIMEOUT  = 5
 
       # Running puppet directly on system and from ruby process has proven different. Following is set of environment variables
       # that assures proper execution from bundler / rvm ruby
       AGNOSTIC_PUPPET_VARS = {
-         "BUNDLE_GEMFILE" => nil,
-         "BUNDLE_BIN_PATH" => nil,
-         "RUBYOPT" => nil,
-         "rvm_" => nil,
-         "RACK_ENV" => nil,
-         "RAILS_ENV" => nil
-       }
-
+        "BUNDLE_GEMFILE" => nil,
+        "BUNDLE_BIN_PATH" => nil,
+        "RUBYOPT" => nil,
+        "rvm_" => nil,
+        "RACK_ENV" => nil,
+        "RAILS_ENV" => nil
+      }
+      
       ##
       # Open3 method extended with timeout, more info https://gist.github.com/pasela/9392115
       #
-
+      
       def capture3_with_timeout(*cmd)
         spawn_opts = Hash === cmd.last ? cmd.pop.dup : {}
         opts = {
@@ -29,16 +29,16 @@ module DTK::Arbiter; module Common
           :signal     => :TERM,
           :kill_after => nil,
         }
-
+        
         in_r,  in_w  = IO.pipe
         out_r, out_w = IO.pipe
         err_r, err_w = IO.pipe
         in_w.sync = true
-
+        
         spawn_opts[:in]  = in_r
         spawn_opts[:out] = out_w
         spawn_opts[:err] = err_w
-
+        
         result = {
           :pid     => nil,
           :status  => nil,
@@ -99,4 +99,4 @@ module DTK::Arbiter; module Common
 
     end
   end
-end; end
+end

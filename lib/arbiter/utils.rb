@@ -1,9 +1,11 @@
 module DTK
   module Arbiter
     module Utils
-      Dir["utils/*.rb"].each do |file_path|
-        require File.expand_path("../../#{file_path}", __FILE__)
-      end
+      require_relative('utils/git')
+      require_relative('utils/permission')
+      require_relative('utils/puppet_runner')
+      require_relative('utils/sanitize')
+      require_relative('utils/ssh_cipher')
     end
   end
 end

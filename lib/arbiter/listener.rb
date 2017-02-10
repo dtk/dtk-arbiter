@@ -49,78 +49,10 @@ module DTK
           Log.fatal("Not able to connect to STOMP, reason: #{msg.header['message']}. Stopping listener now ...", nil)
           exit(1)
         else
-          begin
-            # decode message
-            original_message = decode(msg.body)
-          rescue Exception => ex
-            Log.fatal("Error decrypting STOMP message, will have to ignore this message. Error: #{ex.message}")
-            return
-          end
-          # check pbuilder id
-          unless check_pbuilderid?(original_message[:pbuilderid])
-            Log.debug "Discarding message pbuilder '#{original_message[:pbuilderid]}', not ment for this consumer '#{Arbiter::PBUILDER_ID}'"
-            return
-          end
-          
-          # determine the worker to handle payload
-          Log.debug "Received message: #{Utils::Sanitize.sanitize_message(original_message)}"
-          unless worker = create_worker?(original_message)
-            unless handle_cancel_action?(message)
-              # no worker?! drop the message
-              Log.warn "Not able to resolve desired worker from given message, dropping message."
-            end
-            return
-          end
-        end
-          
-        # no request id?! drop the message
-        unless original_message[:request_id]
-          Log.warn "Not able to resolve request id from given message, dropping message."
-          return
-        end
-          
-        ##
-        # If there is puppet apply running than queue this execution, else just run concurrentl
-        #
-        if worker.is_puppet_apply? && @puppet_apply_running
-          Log.info "Arbiter worker has been queued #{worker} with request id #{worker.request_id}, waiting for execution ..."
-          @puppet_apply_queue.push(worker)
-        else
-          Log.info "Arbiter worker has been chosen #{worker} with request id #{worker.request_id}, starting work ..."
-          run_task_concurrently(worker)
+          process_message(msg)
         end
       end
 
-      def run_task_concurrently(worker)
-        # start new EM thread to handle this work
-        ::EM.defer proc do
-          begin
-            # register thread for cancel
-            @thread_pool[worker.request_id] = Thread.current
-            
-            # we lock concurrency for puppet apply
-            @puppet_apply_running = true if worker.is_puppet_apply?
-            
-            worker.process
-          rescue ArbiterError => e
-            worker.notify_of_error(e.message, e.error_type)
-          rescue Exception => e
-            Log.fatal(e.message, e.backtrace)
-            worker.notify_of_error(e.message, :internal)
-          ensure
-            # we unluck concurrency and trigger next puppet apply task
-            if worker.is_puppet_apply? && @puppet_apply_running
-              @puppet_apply_running = false
-              unless @puppet_apply_queue.empty?
-                queued_instance = @puppet_apply_queue.pop
-                Log.info "Arbiter worker has been un-queued #{queued_instance} with request id #{queued_instance.request_id}, starting work ..."
-                run_task_concurrently(queued_instance)
-              end
-            end
-          end
-        end
-      end
-      
       def update_pong(request_id = 1)
         message = {
           request_id: request_id,
@@ -172,18 +104,89 @@ module DTK
         send(Config.outbox_queue, encoded_message)
       end
       
+      private
+
       ##
       # After arbiter sets up successful connection, we send a heartbeat with pbuilder_id. DTK Server on the other side will be listening to this
       # and mark this node as up and running
       #
-    
       def send_hearbeat
         # we do not have sucess
         update({ :status => :succeeded }, 1, false, true)
         Log.debug "Heatbeat has been sent to '#{Config.outbox_queue}' for instance '#{Arbiter::PBUILDER_ID}' ..."
       end
-      
-      private
+
+      def process_message(msg)
+        begin
+          # decode message
+          decoded_message = decode(msg.body)
+        rescue Exception => ex
+          Log.fatal("Error decrypting STOMP message, will have to ignore this message. Error: #{ex.message}")
+          return
+        end
+        # check pbuilder id
+        unless check_pbuilderid?(decoded_message[:pbuilderid])
+          Log.debug "Discarding message pbuilder '#{decoded_message[:pbuilderid]}', not ment for this consumer '#{Arbiter::PBUILDER_ID}'"
+          return
+        end
+          
+        # determine the worker to handle payload
+        Log.debug "Received message: #{Utils::Sanitize.sanitize_message(decoded_message)}"
+        unless worker = Worker.create?(decoded_message, self)
+          unless handle_cancel_action?(decoded_message)
+            # no worker?! drop the message
+            Log.warn "Not able to resolve desired worker from given message, dropping message."
+          end
+          return
+        end
+          
+        # no request id?! drop the message
+        unless decoded_message[:request_id]
+          Log.warn "Not able to resolve request id from given message, dropping message."
+          return
+        end
+          
+        ##
+        # If there is puppet apply running than queue this execution, else just run concurrentl
+        #
+        if worker.is_puppet_apply? && @puppet_apply_running
+          Log.info "Arbiter worker has been queued #{worker} with request id #{worker.request_id}, waiting for execution ..."
+          @puppet_apply_queue.push(worker)
+        else
+          Log.info "Arbiter worker has been chosen #{worker} with request id #{worker.request_id}, starting work ..."
+          run_task_concurrently(worker)
+        end
+      end
+
+      def run_task_concurrently(worker)
+        # start new EM thread to handle this work
+        ::EM.defer(proc do
+          begin
+            # register thread for cancel
+            @thread_pool[worker.request_id] = Thread.current
+            
+            # we lock concurrency for puppet apply
+            @puppet_apply_running = true if worker.is_puppet_apply?
+            
+            worker.process
+          rescue ArbiterError => e
+            worker.notify_of_error(e.message, e.error_type)
+          rescue Exception => e
+            Log.fatal(e.message, e.backtrace)
+            worker.notify_of_error(e.message, :internal)
+          ensure
+            # we unluck concurrency and trigger next puppet apply task
+            if worker.is_puppet_apply? && @puppet_apply_running
+              @puppet_apply_running = false
+              unless @puppet_apply_queue.empty?
+                queued_instance = @puppet_apply_queue.pop
+                Log.info "Arbiter worker has been un-queued #{queued_instance} with request id #{queued_instance.request_id}, starting work ..."
+                run_task_concurrently(queued_instance)
+              end
+            end
+          end
+        end)
+      end
       
       ##
       # This message parses out result to add to body more error info, to be in line with our legacy code on server
@@ -213,15 +216,11 @@ module DTK
         
         decoded_message = Utils::SSHCipher.decrypt_sensitive(encrypted_message[:payload], encrypted_message[:ekey], encrypted_message[:esecret])
         decoded_message
-    end
-      
-      def create_worker?(message)
-        Worker.create?(message, self) ||  handle_cancel_action?(target_agent, message)
       end
-    
+      
       def handle_cancel_action?(message)
         case message[:agent]
-        when 'cancel_agent', 'puppet_cancel'
+        when 'cancel_action'
           Log.info "Sending cancel signal to worker for request (ID: '#{message[:request_id]}')"
           cancel_worker(message[:request_id])
           true

@@ -1,9 +1,13 @@
 module DTK
   module Arbiter
     class Worker
-      Dir["worker/*.rb"].each do |file_path|
-        require File.expand_path("../../#{file_path}", __FILE__)
-      end
+      require_relative('worker/action')
+      require_relative('worker/discovery')
+      require_relative('worker/docker')
+      require_relative('worker/generic')
+      require_relative('worker/puppet')
+      require_relative('worker/secure')
+      require_relative('worker/system')
 
       attr_reader :request_id
 

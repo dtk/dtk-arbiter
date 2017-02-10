@@ -1,9 +1,5 @@
-require File.expand_path('../../action/commander', __FILE__)
-
-Dir[File.dirname(__FILE__) + '../action/*.rb'].each { |file| require file }
-
-module DTK
-  class Arbiter::Worker
+module DTK::Arbiter
+  class Worker
     class Action < self
       attr_reader :process_pool
 

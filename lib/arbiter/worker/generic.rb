@@ -4,13 +4,13 @@ require 'socket'
 require 'timeout'
 require 'rufus-scheduler'
 
-require_relative('../common/worker')
-require_relative('../dtkarbiterservice_services_pb')
-require_relative('../docker/commander')
-module DTK
-  class Arbiter::Worker
+#require_relative('../common/worker')
+#require_relative('../dtkarbiterservice_services_pb')
+#require_relative('../docker/commander')
+module DTK::Arbiter
+  class Worker
     class Generic < self
-      include Common::Open3
+      include CommonMixin::Open3
 
       BASE_DTK_DIR                = '/usr/share/dtk'
       MODULE_DIR                 = "#{BASE_DTK_DIR}/modules"
@@ -39,12 +39,12 @@ module DTK
 
         Log.info "Initializing generic worker"
 
-        @protocol_version        = get(:protocol_version) || 0
+        @protocol_version       = get(:protocol_version) || 0
 
         @provider_type          = get(:provider_type) || UNKNOWN_PROVIDER
 
         @service_instance       = get(:service_instance)
-        @component              = get
+        @component              = get(:component)
         @attributes             = get(:attributes)
         @provider_attributes    = @attributes[:provider] || raise(Arbiter::MissingParams, "Provider attributes missing.")
         @instance_attributes    = @attributes[:instance]

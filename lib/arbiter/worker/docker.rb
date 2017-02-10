@@ -1,9 +1,9 @@
-require 'docker'
+#require 'docker'
 
-Dir[File.dirname(__FILE__) + '../docker/*.rb'].each { |file| require file }
+#Dir[File.dirname(__FILE__) + '../docker/*.rb'].each { |file| require file }
 
-module DTK
-  class Arbiter::Worker
+module DTK::Arbiter
+  class Worker
     class Docker < self
       attr_reader :process_pool
 

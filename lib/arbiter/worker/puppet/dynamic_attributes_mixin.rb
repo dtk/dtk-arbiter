@@ -1,11 +1,10 @@
 ###
-# Part of legacy mcollective code, marked for refactoring
+# TODO: Part of legacy mcollective code, marked for refactoring
 #
 
-module Arbiter
-  module Puppet
-    module DynamicAttributes
-
+module DTK::Arbiter
+  class Worker::Puppet
+    module DynamicAttributesMixin
       def has_dynamic_attributes?(cmps_with_attrs)
         ret = cmps_with_attrs.map do |cmp_with_attrs|
           dyn_attrs = cmp_with_attrs["dynamic_attributes"]||[]

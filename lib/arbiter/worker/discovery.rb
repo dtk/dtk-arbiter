@@ -1,5 +1,5 @@
-module DTK
-  class Arbiter::Worker
+module DTK::Arbiter
+  class Worker
     class Discovery < self
       attr_reader :process_pool
 

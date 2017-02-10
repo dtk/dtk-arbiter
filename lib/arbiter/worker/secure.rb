@@ -1,9 +1,7 @@
-require File.expand_path('../../utils/puppet_runner', __FILE__)
-
-module DTK
-  class Arbiter::Worker
+module DTK::Arbiter
+  class Worker
     class Secure < self
-      SSH_AUTH_KEYS_FILE_NAME    = "authorized_keys"
+      SSH_AUTH_KEYS_FILE_NAME = "authorized_keys"
 
       attr_reader :process_pool
 

@@ -2,14 +2,11 @@ require 'fileutils'
 require 'tempfile'
 require 'sys/proctable'
 
-require File.expand_path('../../common/gitclient', __FILE__)
-require File.expand_path('../../utils/puppet_runner', __FILE__)
-require File.expand_path('../../utils/git', __FILE__)
-require File.expand_path('../../puppet/dynamic_attributes', __FILE__)
-
-module DTK
-  class Arbiter::Worker
+module DTK::Arbiter
+  class Worker
     class Puppet < self
+      require_relative('puppet/dynamic_attributes_mixin')
+
       UNKNOWN_SERVICE = 'UNKNOWN'
       NUMBER_OF_RETRIES = 5
 
@@ -21,8 +18,8 @@ module DTK
       YUM_LOCK_FILE       = "/var/run/yum.pid"
       YUM_LOCK_RETRIES    = 1
 
-      include Common::Open3
-      include Puppet::DynamicAttributes
+      include CommonMixin::Open3
+      include DynamicAttributesMixin
 
       def initialize(message_content, listener)
         super(message_content, listener)

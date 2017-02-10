@@ -5,7 +5,7 @@ module Arbiter
   module Docker
     class Commander
 
-      include Common::Open3
+      include CommonMixin::Open3
 
       NUMBER_OF_RETRIES = 5
       WAIT_TIME = 5

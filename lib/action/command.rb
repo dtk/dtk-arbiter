@@ -9,7 +9,7 @@ module Arbiter
 
     class Command
 
-      include Common::Open3
+      include CommonMixin::Open3
 
       attr_accessor :command_type, :command, :process, :backtrace
 
