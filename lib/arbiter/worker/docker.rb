@@ -1,10 +1,8 @@
-#require 'docker'
-
-#Dir[File.dirname(__FILE__) + '../docker/*.rb'].each { |file| require file }
-
 module DTK::Arbiter
   class Worker
     class Docker < self
+      require_relative('docker/commander')
+
       attr_reader :process_pool
 
       def initialize(message_content, listener)

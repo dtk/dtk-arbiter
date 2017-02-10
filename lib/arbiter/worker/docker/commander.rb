@@ -1,8 +1,8 @@
 require 'docker'
 require 'digest/sha1'
 
-module Arbiter
-  module Docker
+module DTK::Arbiter
+  class Worker::Docker
     class Commander
 
       include CommonMixin::Open3

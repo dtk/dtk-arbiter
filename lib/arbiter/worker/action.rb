@@ -2,13 +2,16 @@ module DTK::Arbiter
   class Worker
     class Action < self
       attr_reader :process_pool
+      require_relative('action/command')
+      require_relative('action/position')
+      require_relative('action/commander')
 
       def initialize(message_content, listener)
         super(message_content, listener)
 
         @process_pool = []
         @execution_list = @received_message[:execution_list] || []
-        @commander = Action::Commander.new(@execution_list)
+        @commander = Commander.new(@execution_list)
       end
       private :initialize
 

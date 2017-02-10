@@ -1,15 +1,14 @@
-require 'grpc'
+require 'docker'
 require 'json'
 require 'socket'
 require 'timeout'
 require 'rufus-scheduler'
 
-#require_relative('../common/worker')
-#require_relative('../dtkarbiterservice_services_pb')
-#require_relative('../docker/commander')
 module DTK::Arbiter
   class Worker
     class Generic < self
+      require_relative('generic/grpc_helper')
+
       include CommonMixin::Open3
 
       BASE_DTK_DIR                = '/usr/share/dtk'
@@ -111,7 +110,7 @@ module DTK::Arbiter
         end
 
         # send a message to the gRPC provider server/daemon
-        stub = Dtkarbiterservice::ArbiterProvider::Stub.new("#{@container_ip}:#{grpc_random_port}", :this_channel_is_insecure)
+        stub = GrpcHelper.arbiter_service_stub("#{@container_ip}:#{grpc_random_port}", :this_channel_is_insecure)
 
         provider_message = generate_provider_message(@attributes, {:component_name => @component_name, :module_name => @module_name}, @protocol_version) #provider_message_hash.to_json
 

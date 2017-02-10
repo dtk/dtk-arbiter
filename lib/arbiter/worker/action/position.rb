@@ -1,11 +1,9 @@
 require 'thread'
 require 'git'
 require 'fileutils'
-require File.expand_path('../../utils/permission', __FILE__)
 
-
-module Arbiter
-  module Action
+module DTK::Arbiter
+  class Worker::Action
     class Position
 
       attr_accessor :position_file_info, :exitstatus, :started, :out, :err, :backtrace, :owner, :mode

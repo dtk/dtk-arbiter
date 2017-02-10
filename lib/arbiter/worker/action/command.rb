@@ -1,12 +1,10 @@
 require 'timeout'
 
-module Arbiter
-  module Action
-
+module DTK::Arbiter
+  class Worker::Action
     ##
     # This is container for command as received from Node Agent
     #
-
     class Command
 
       include CommonMixin::Open3
@@ -140,4 +138,4 @@ module Arbiter
 
     end
   end
-  end
+end

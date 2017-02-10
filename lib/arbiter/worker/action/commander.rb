@@ -1,9 +1,5 @@
-require File.expand_path('../command', __FILE__)
-require File.expand_path('../position', __FILE__)
-
-
-module Arbiter
-  module Action
+module DTK::Arbiter
+  class Worker::Action
     class Commander
 
       PARALLEL_EXECUTION = ENV['ARBITER_ACTION_PARALLEL_EXECUTION'] || false
