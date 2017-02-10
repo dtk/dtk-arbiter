@@ -61,8 +61,10 @@ module DTK::Arbiter
         @container_ip           = inside_docker? ? get_docker_ip : '127.0.0.1'
 
         # Make sure following is prepared
-        FileUtils.mkdir_p(SERVICE_INSTANCES_DIR, mode: 0755) unless File.directory?(SERVICE_INSTANCES_DIR)
         FileUtils.mkdir_p(MODULE_DIR, mode: 0755) unless File.directory?(MODULE_DIR)
+        # TODO: below should be put in if we want shared space for service instances
+        # FileUtils.mkdir_p(SERVICE_INSTANCES_DIR, mode: 0755) unless File.directory?(SERVICE_INSTANCES_DIR)
+
       end
       private :initialize
 
