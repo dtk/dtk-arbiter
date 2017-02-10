@@ -41,6 +41,7 @@ module DTK::Arbiter
         @protocol_version       = get(:protocol_version) || 0
 
         @provider_type          = get(:provider_type) || UNKNOWN_PROVIDER
+        require 'byebug'; debugger
 
         @service_instance       = get(:service_instance)
         @component              = get(:component)
@@ -86,18 +87,19 @@ module DTK::Arbiter
       def run
         Log.info 'Starting generic worker run'
         # spin up the provider gRPC server
-        grpc_random_port = '50051' #generate_port
+        grpc_random_port = generate_port
+        grpc_address = "#{@container_ip}:#{grpc_random_port}"
          # if docker execution is required
         # spin up the gRPC daemon in a docker container
         if ephemeral?
           docker_image = nil
-          docker_image_tag = @provider_name_internal
+          docker_image_tag = generate_container_name
           #dockerfile = message['dockerfile']
 
           Log.info "Building docker image #{docker_image_tag}"
           docker_image = ::Docker::Image.build(@dockerfile)
           docker_image.tag('repo' => docker_image_tag, 'force' => true)
-          Log.info "Starting docker container #{docker_image_tag}"
+          Log.info "Starting docker container #{docker_image_tag} on port #{grpc_random_port}"
           start_daemon_docker(docker_image_tag, grpc_random_port.to_s)
         else
 
@@ -127,6 +129,10 @@ module DTK::Arbiter
         if message["error"] == "true"
           notify_of_error("#{@provider_type} provider reported an error with message: #{message["error_message"]}", :abort_action)
         end
+
+        # add the gRPC address as a dynamic attribute
+        message["dynamic_attributes"] = Hash.new unless message["dynamic_attributes"]
+        message["dynamic_attributes"]["grpc_address"] = grpc_address
 
         message
       end
@@ -227,11 +233,18 @@ module DTK::Arbiter
         false
       end
 
-      def generate_port(ip = CONTAINER_IP)
-        range = 50000..60000
-        begin
-          port = rand(range)
-        end unless port_open?(ip, port)
+      def generate_port(ip = @container_ip)
+        container_name = generate_container_name
+        if container_running?(container_name)
+          container = ::Docker::Container.get(container_name)
+          port = container.info["NetworkSettings"]["Ports"]["50051/tcp"].first["HostPort"]
+          return port
+        else
+          range = 50000..60000
+          begin
+            port = rand(range)
+          end unless port_open?(ip, port)
+        end
       end
 
       def ephemeral?
@@ -258,6 +271,10 @@ module DTK::Arbiter
         else
           attributes.merge(merge_hash).to_json
         end
+      end
+
+      def generate_container_name
+        "#{@service_instance}-#{@component_name}".tr(':','-')
       end
     end
   end
