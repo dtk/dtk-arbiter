@@ -19,6 +19,8 @@ module DTK::Arbiter
       DOCKER_GC_SCHEDULE          = '1d'
       DOCKER_GC_GRACE_PERIOD      = '86400'
 
+      $queue = []
+
       # enable docker garbace collector schedule
       scheduler = Rufus::Scheduler.new
 
@@ -41,7 +43,6 @@ module DTK::Arbiter
         @protocol_version       = get(:protocol_version) || 0
 
         @provider_type          = get(:provider_type) || UNKNOWN_PROVIDER
-        require 'byebug'; debugger
 
         @service_instance       = get(:service_instance)
         @component              = get(:component)
@@ -114,6 +115,8 @@ module DTK::Arbiter
           end
         end
 
+
+        $queue << docker_image_tag
         # send a message to the gRPC provider server/daemon
         stub = GrpcHelper.arbiter_service_stub("#{@container_ip}:#{grpc_random_port}", :this_channel_is_insecure)
 
@@ -123,6 +126,8 @@ module DTK::Arbiter
         message = stub.process(Dtkarbiterservice::ProviderMessage.new(message: provider_message)).message
         Log.info 'gRPC daemon response received'
         message = JSON.parse(message)
+
+        $queue.delete_at($queue.index(docker_image_tag) || $queue.length)
         # stop the daemon
         ephemeral? ? stop_daemon_docker(docker_image_tag) : stop_daemon
 
@@ -166,12 +171,19 @@ module DTK::Arbiter
       end
       
       def container_running?(name)
+        true if ::Docker::Container.get(name).info["State"]["Status"] == 'running' rescue false
+      end
+
+      def container_exists?(name)
         true if ::Docker::Container.get(name) rescue false
       end
       
       def start_daemon_docker(name, port = '50051')
-        # remove the container if already running
-        stop_daemon_docker(name)
+
+        return if container_running?(name)
+        stop_daemon_docker(name) unless $queue.include?(name)
+
+        stop_and_remove_container(name) if container_exists?(name)
   
         container = ::Docker::Container.create(container_params_hash(name, port))
 
@@ -207,16 +219,18 @@ module DTK::Arbiter
       end  
 
       def stop_daemon_docker(name)
-        if container_running?(name)
-          begin
-            container = ::Docker::Container.get(name)
-            container.stop
-            container.remove
-            true
-          rescue
-            notify_of_error("Failed to remove existing docker container", :abort_action)
-            false
-          end
+        stop_and_remove_container(name) if container_running?(name)
+      end
+
+      def stop_and_remove_container(name)
+        begin
+          container = ::Docker::Container.get(name)
+          container.stop
+          container.remove
+          true
+        rescue
+          notify_of_error("Failed to remove existing docker container", :abort_action)
+          false
         end
       end
 
