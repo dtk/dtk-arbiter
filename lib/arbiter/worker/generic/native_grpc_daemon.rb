@@ -1,66 +1,66 @@
 module DTK::Arbiter
   class Worker::Generic
     module NativeGrpcDaemon
-      NUMBER_OF_RETRIES = 5
-      TIME_BETWEEN_RETRY = 1
-
       module Mixin
         private
 
         #returns ResponseHash
         def invoke_action_when_native_grpc_daemon
           # spin up the gRPC daemon on the OS
-          status = start_grpc_daemon_with_retries
-          response_hash = nil
-          if status == :failed
-            response_hash = ResponseHash.error
+          daemon_process_id, error_msg = NativeGrpcDaemon.start_grpc_daemon_with_retries(provider_entrypoint, grpc_port, grpc_address)
+          unless daemon_process_id
+            ResponseHash.error(error_msg)
           else
-            response_hash = grpc_call
-            stop_grpc_daemon
-          end
-        end
-
-        # returns :ok or :failed
-        def start_grpc_daemon_with_retries
-          tries ||= NativeGrpcDaemon::NUMBER_OF_RETRIES
-          status = :failed
-          until (tries -= 1).zero?
-            status = start_grpc_daemon
-            return :ok if status == :ok
-            sleep NativeGrpcDaemon::TIME_BETWEEN_RETRY
-          end
-          notify_of_error("Failed to start #{provider_type} gRPC daemon", :abort_action)
-          :failed
-        end
-
-        # returns :ok or :failed
-        def start_grpc_daemon
-          # check if provider daemon is already running
-          if File.exist?(@pidfile_path)
-            pid = File.read(@pidfile_path).to_i
-            return :ok if (Process.getpgid(pid) rescue false)
-          end
-          # if not, start it
-          begin
-            puts 'starting daemon'
-            daemon_job = fork do
-              ::Bundler.with_clean_env do
-                exec @provider_entrypoint
-              end
+            begin
+              grpc_call_to_invoke_action
+            ensure
+              NativeGrpcDaemon.stop_grpc_daemon(daemon_process_id)
             end
-            sleep 2
-            :ok
-          rescue
-            :failed
           end
-        end
-      
-        def stop_grpc_daemon
-          pid = File.read(@pidfile_path).to_i
-          Process.kill("HUP", pid)
         end
 
       end
+      
+      NUMBER_OF_RETRIES  = 5
+      TIME_BETWEEN_RETRY = 1
+      PAUSE_AFTER_START  = 2 # in seconds
+    
+      # returns daemon_process_id or [nil, error_msg]
+      def self.start_grpc_daemon_with_retries(provider_entrypoint, grpc_port, grpc_address)
+        tries ||= NUMBER_OF_RETRIES
+        status = :failed
+        until (tries -= 1).zero?
+          if daemon_process_id = start_grpc_daemon?(provider_entrypoint, grpc_port)
+            Log.info "Started gRPC daemon natively on #{grpc_address}"
+            return daemon_process_id
+          else
+            sleep TIME_BETWEEN_RETRY
+          end
+        end
+        [nil, "Failed to start gRPC daemon natively on #{grpc_address}"]
+      end
+      
+      def self.stop_grpc_daemon(daemon_process_id)
+        Process.kill('HUP', daemon_process_id) rescue nil
+      end
+      
+      private
+      
+    # returns daemon_process_id  or nil
+      def self.start_grpc_daemon?(provider_entrypoint, grpc_port)
+        begin
+          daemon_process_id = fork do
+            ::Bundler.with_clean_env do
+              exec provider_entrypoint, grpc_port.to_s
+          end
+          end
+          sleep PAUSE_AFTER_START
+        daemon_process_id
+        rescue
+          nil
+        end
+      end
+
     end
   end
 end

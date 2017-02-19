@@ -43,10 +43,6 @@ module DTK::Arbiter
         @dockerfile             = get(:execution_environment)[:docker_file]
         @provider_name_internal = "#{@provider_type}-provider"
         @provider_entrypoint    = "#{MODULE_DIR}/#{@provider_name_internal}/init"
-        @pidfile_path           = "/tmp/#{@provider_name_internal}.pid"
-
-        # dyamically set
-        @grpc_port = nil
 
         # Make sure following is prepared
         FileUtils.mkdir_p(MODULE_DIR, mode: 0755) unless File.directory?(MODULE_DIR)
@@ -68,12 +64,13 @@ module DTK::Arbiter
       end
 
       private
+
+      attr_reader :provider_entrypoint
       
       def invoke_action
         Log.info 'Starting generic worker run'
         # spin up the provider gRPC server
-        @grpc_port = generate_port
-        grpc_address = "#{grpc_host}:#{@grpc_port}"
+        set_grpc_port!(generate_grpc_port)
 
         response_hash = 
           if ephemeral?
@@ -94,7 +91,19 @@ module DTK::Arbiter
       def ephemeral?
         @execution_type == 'ephemeral_container'
       end
-            
+
+      def generate_provider_message(attributes, merge_hash, protocol_version)
+        case protocol_version
+        when 1
+          converted_attributes = attributes.inject({}) do |h, (type, attributes_hash)|
+            h.merge(type => attributes_hash.inject({}) { |h, (name, info)| h.merge(name => info[:value]) })
+          end
+          converted_attributes.merge(merge_hash).to_json
+        else
+          attributes.merge(merge_hash).to_json
+        end
+      end
+
       def grpc_host
         @grpc_host ||= arbiter_inside_docker? ? get_arbiter_primary_ip : '127.0.0.1'
       end
@@ -103,6 +112,14 @@ module DTK::Arbiter
         @grpc_port || fail("Unexpected that @grpc_port is not set")
       end
 
+      def set_grpc_port!(grpc_port)
+        @grpc_port = grpc_port
+      end
+      
+      def grpc_address
+        "#{grpc_host}:#{grpc_port}"
+      end
+      
       def arbiter_inside_docker?
         File.exist?('/.dockerenv')
       end
@@ -114,29 +131,28 @@ module DTK::Arbiter
       end
 
       # returns response_hash
-      def grpc_call
+      def grpc_call_to_invoke_action
         # send a message to the gRPC provider server/daemon
-        stub = GrpcHelper.arbiter_service_stub("#{grpc_host}:#{grpc_port}", :this_channel_is_insecure)
+        stub = GrpcHelper.arbiter_service_stub(grpc_address, :this_channel_is_insecure)
         
         provider_message = generate_provider_message(@attributes, {:component_name => @component_name, :module_name => @module_name}, @protocol_version) #provider_message_hash.to_json
 
-        Log.info 'Sending a message to the gRPC daemon'
+        Log.info "Sending a message to the gRPC daemon at #{grpc_address}"
         grpc_json_response = stub.process(Dtkarbiterservice::ProviderMessage.new(message: provider_message)).message
         Log.info 'gRPC daemon response received'
         ResponseHash.create_from_json(grpc_json_response)
       end
       
-      def generate_port
+      def generate_grpc_port
         if ephemeral?
           if port = running_container_port?
             return port
           end
-
-          range = 50000..60000
-          begin
-            port = rand(range)
-          end unless port_open?(grpc_host, port)
         end
+        range = 50000..60000
+        begin
+          port = rand(range)
+        end unless port_open?(grpc_host, port)
       end
 
       def port_open?(ip, port, seconds=1)
@@ -152,18 +168,6 @@ module DTK::Arbiter
         false
       end
       
-      def generate_provider_message(attributes, merge_hash, protocol_version)
-        case protocol_version
-        when 1
-          converted_attributes = attributes.inject({}) do |h, (type, attributes_hash)|
-            h.merge(type => attributes_hash.inject({}) { |h, (name, info)| h.merge(name => info[:value]) })
-          end
-          converted_attributes.merge(merge_hash).to_json
-        else
-          attributes.merge(merge_hash).to_json
-        end
-      end
-
     end
   end
 end

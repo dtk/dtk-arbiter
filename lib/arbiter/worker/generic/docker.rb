@@ -20,7 +20,7 @@ module DTK::Arbiter
           if docker_image_tag.nil?
             response_hash = ResponseHash.error(error_msg: error_msg)
           else
-            response_hash = grpc_call
+            response_hash = grpc_call_to_invoke_action
             $queue.delete_at($queue.index(docker_image_tag) || $queue.length)
             Helper.new(container_name).stop_and_remove_container?
           end
