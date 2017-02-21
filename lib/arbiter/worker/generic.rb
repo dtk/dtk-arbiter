@@ -143,16 +143,18 @@ module DTK::Arbiter
         ResponseHash.create_from_json(grpc_json_response)
       end
       
+      PORT_RANGE = 50000..60000
       def generate_grpc_port
+        port = nil
         if ephemeral?
           if port = running_container_port?
             return port
           end
         end
-        range = 50000..60000
-        begin
-          port = rand(range)
-        end unless port_open?(grpc_host, port)
+        while port.nil? or port_open?(grpc_host, port) do
+          port = rand(PORT_RANGE)
+        end
+        port
       end
 
       def port_open?(ip, port, seconds=1)
