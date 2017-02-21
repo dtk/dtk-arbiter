@@ -2,7 +2,8 @@ module DTK::Arbiter
   class Worker::Generic
     module Docker
       require_relative('docker/garbage_collection')
-      require_relative('docker/helper')
+      require_relative('docker/container')
+      require_relative('docker/image')
 
       module OpenPortCheck
         NUMBER_OF_RETRIES = 10
@@ -22,7 +23,7 @@ module DTK::Arbiter
           else
             response_hash = grpc_call_to_invoke_action
             $queue.delete_at($queue.index(docker_image_tag) || $queue.length)
-            Helper.new(container_name).stop_and_remove_container?
+            Container.stop_and_remove?(container_name)
           end
           response_hash
         end
@@ -31,7 +32,7 @@ module DTK::Arbiter
         def build_and_start_docker_container 
           docker_image_tag = container_name
           Log.info "Building docker image #{docker_image_tag}"
-          Helper.build_image(@dockerfile, docker_image_tag)
+          Image.build(@dockerfile, docker_image_tag)
 
           Log.info "Starting docker container #{docker_image_tag} on port #{grpc_port}"
           status, error_msg = start_daemon_docker?
@@ -45,19 +46,17 @@ module DTK::Arbiter
 
         # returns :ok or :failed and if failed [:failed, err_msg] is returned
         def start_daemon_docker?
-          docker_helper = Helper.new(container_name)
-          return :ok if docker_helper.container_running?
+          return :ok if Container.running?(container_name)
 
           begin
-            docker_helper.stop_and_remove_container? unless $queue.include?(container_name)
+            Container.stop_and_remove?(container_name) unless $queue.include?(container_name)
           rescue => e
             return [:failed, "Failed to remove existing docker container '#{container_name}' (#{e.message})"]
           end
 
           container = nil
           begin
-            container = docker_helper.create_container(grpc_host, grpc_port)
-            container.start
+            Container.create_and_start(container_name, grpc_host, grpc_port)
           rescue => e
             return [:failed, "Failed to create and start the docker container '#{container_name}' (#{e.message})"]
           end
@@ -74,11 +73,11 @@ module DTK::Arbiter
         end
 
         def running_container_port?
-          Helper.new(container_name).running_container_port?
+          Container.running_port?(container_name)
         end
 
         def container_name
-          "#{@service_instance}-#{@component_name}".tr(':','-')
+          @container_name ||= "#{@service_instance}-#{@component_name}".tr(':','-')
         end
 
       end
