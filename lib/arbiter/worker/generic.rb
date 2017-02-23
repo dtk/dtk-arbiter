@@ -44,6 +44,8 @@ module DTK::Arbiter
         @provider_name_internal = "#{@provider_type}-provider"
         @provider_entrypoint    = "#{MODULE_DIR}/#{@provider_name_internal}/init"
 
+        @task_id                = get(:task_id)
+
         # Make sure following is prepared
         FileUtils.mkdir_p(MODULE_DIR, mode: 0755) unless File.directory?(MODULE_DIR)
       end
@@ -61,6 +63,19 @@ module DTK::Arbiter
         # run the provider
         provider_run_response = invoke_action
         notify(provider_run_response)
+      end
+
+      def self.cancel_task(message)
+        if message[:agent] == 'cancel_action' && message[:worker] == 'generic'
+          task_id = message[:task_id]
+          running_containers_queue = $queue.select {|q| q[task_id]}
+          running_containers_queue.each do |taskid_container|
+            $queue.delete_at($queue.index(taskid_container) || $queue.length)
+            container_name = taskid_container[task_id]
+            Log.info "Removing container #{container_name} as requested by cancel action"
+            Docker::Container.stop_and_remove?(taskid_container[task_id]) rescue false
+          end
+        end
       end
 
       private
