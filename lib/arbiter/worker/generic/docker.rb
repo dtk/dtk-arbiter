@@ -49,7 +49,7 @@ module DTK::Arbiter
           return :ok if Container.running?(container_name)
 
           begin
-            Container.stop_and_remove?(container_name) unless $queue.include?(container_name)
+            Container.stop_and_remove?(container_name) unless $queue.include?({@task_id => container_name})
           rescue => e
             return [:failed, "Failed to remove existing docker container '#{container_name}' (#{e.message})"]
           end
