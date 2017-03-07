@@ -69,11 +69,19 @@ module DTK::Arbiter
         if message[:agent] == 'cancel_action' && message[:worker] == 'generic'
           task_id = message[:task_id]
           running_containers_queue = $queue.select {|q| q[task_id]}
-          running_containers_queue.each do |taskid_container|
-            $queue.delete_at($queue.index(taskid_container) || $queue.length)
-            container_name = taskid_container[task_id]
-            Log.info "Removing container #{container_name} as requested by cancel action"
-            Docker::Container.stop_and_remove?(taskid_container[task_id]) rescue false
+          running_containers_queue.each do |process|
+            $queue.delete_at($queue.index(process) || $queue.length)
+            # this will be either a docker container name or PID of the native gRPC daemon
+            process_id = process[task_id]
+            if process['type'] == 'docker'
+              Log.info "Removing container #{process_id} as requested by cancel action"
+              Docker::Container.stop_and_remove?(process_id) rescue false
+            elsif process['type'] == 'native'
+              Log.info "Killing process with a PID of #{process_id} as requested by cancel action"
+              Process.kill('HUP', process_id) rescue false
+            else
+              notify_of_error("Unrecognized process type in cancel task.", :abort_action)
+            end
           end
         end
       end

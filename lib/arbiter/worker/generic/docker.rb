@@ -22,7 +22,7 @@ module DTK::Arbiter
             response_hash = ResponseHash.error(error_msg: error_msg)
           else
             response_hash = grpc_call_to_invoke_action
-            $queue.delete_at($queue.index({@task_id => docker_image_tag}) || $queue.length)
+            $queue.delete_at($queue.index({@task_id => docker_image_tag, 'type' => 'docker'}) || $queue.length) unless $queue.empty?
             Container.stop_and_remove?(container_name)
           end
           response_hash
@@ -39,7 +39,7 @@ module DTK::Arbiter
           if status == :failed
             [nil, error_msg]
           else
-            $queue << {@task_id => docker_image_tag}
+            $queue << {@task_id => docker_image_tag, 'type' => 'docker'}
             docker_image_tag
           end
         end
@@ -77,7 +77,7 @@ module DTK::Arbiter
         end
 
         def container_name
-          @container_name ||= "#{@service_instance}-#{@component_name}".tr(':','-')
+          @container_name ||= "#{@service_instance}-#{@component_name}-#{@task_id}".tr(':','-')
         end
 
       end
