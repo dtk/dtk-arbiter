@@ -8,6 +8,7 @@ module DTK::Arbiter
       require_relative('generic/response_hash')
       require_relative('generic/docker')
       require_relative('generic/native_grpc_daemon')
+      require_relative('generic/convert_to_ruby_datatype')
 
       include NativeGrpcDaemon::Mixin
       include Docker::Mixin
@@ -116,15 +117,17 @@ module DTK::Arbiter
       end
 
       def generate_provider_message(attributes, merge_hash, protocol_version)
-        case protocol_version
-        when 1
-          converted_attributes = attributes.inject({}) do |h, (type, attributes_hash)|
-            h.merge(type => attributes_hash.inject({}) { |h, (name, info)| h.merge(name => info[:value]) })
+        converted_attributes = 
+          case protocol_version
+          when 1
+            attributes.inject({}) do |h, (type, attributes_with_metadata)|
+            h.merge(type => ConvertToRubyDataype.convert_attributes(attributes_with_metadata))
           end
-          converted_attributes.merge(merge_hash).to_json
-        else
-          attributes.merge(merge_hash).to_json
-        end
+          else
+            attributes
+          end
+        
+        converted_attributes.merge(merge_hash).to_json
       end
 
       def grpc_host
