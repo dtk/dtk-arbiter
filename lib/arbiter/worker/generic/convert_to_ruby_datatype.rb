@@ -18,7 +18,7 @@ module DTK::Arbiter
           when :boolean then  convert_to_boolean(value)
           when :hash then  convert_to_hash(value)
           when :array then  convert_to_array(value)
-          when :json then convert_to_hash_or_array(value) # TODO: this type might get depreacted
+          when :json then value # TODO: this type might get depreacted
 
           else
             handle_datatype_error(value, "Unknown datatype '#{datatype}'")
