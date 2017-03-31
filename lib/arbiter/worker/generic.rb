@@ -24,6 +24,7 @@ module DTK::Arbiter
         super(message_content, listener)
 
         Log.info "Initializing generic worker"
+        Log.info "Environment: #{ENV.inspect}"
 
         @protocol_version       = get(:protocol_version) || 0
 
