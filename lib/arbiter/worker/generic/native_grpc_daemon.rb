@@ -50,6 +50,7 @@ module DTK::Arbiter
       
     # returns daemon_process_id  or nil
       def self.start_grpc_daemon?(provider_entrypoint, grpc_port)
+        return 123
         begin
           daemon_process_id = fork do
             ::Bundler.with_clean_env do
