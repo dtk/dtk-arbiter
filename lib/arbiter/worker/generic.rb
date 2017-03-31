@@ -160,7 +160,7 @@ module DTK::Arbiter
       # returns response_hash
       def grpc_call_to_invoke_action
         # send a message to the gRPC provider server/daemon
-        stub = GrpcHelper.arbiter_service_stub(grpc_address, :this_channel_is_insecure)
+        stub = GrpcHelper.arbiter_service_stub(grpc_address, :this_channel_is_insecure, :timeout => 240)
         
         provider_message = generate_provider_message(@attributes, {:component_name => @component_name, :module_name => @module_name}, @protocol_version) #provider_message_hash.to_json
 
