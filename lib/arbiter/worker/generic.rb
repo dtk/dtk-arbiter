@@ -165,6 +165,11 @@ module DTK::Arbiter
         provider_message = generate_provider_message(@attributes, {:component_name => @component_name, :module_name => @module_name}, @protocol_version) #provider_message_hash.to_json
 
         Log.info "Sending a message to the gRPC daemon at #{grpc_address}"
+      require 'byebug'
+      require 'byebug/core'
+      Byebug.wait_connection = true
+      Byebug.start_server 'localhost'
+      debugger
         grpc_json_response = stub.process(Dtkarbiterservice::ProviderMessage.new(message: provider_message)).message
         Log.info 'gRPC daemon response received'
         ResponseHash.create_from_json(grpc_json_response)

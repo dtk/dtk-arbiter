@@ -14,6 +14,7 @@ gem 'aws-sdk'
 gem 'rest-client', '1.8.0'
 gem 'grpc'
 gem 'rufus-scheduler'
+gem 'byebug'
 
 group :development do
   gem 'dotenv'
