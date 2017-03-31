@@ -32,6 +32,29 @@
 #
 
 require 'grpc'
+
+# GRPC is the general RPC module
+#
+# Configure its logging for fine-grained log control during test runs
+
+module GRPC
+  class DTKLogger < ::DTK::Arbiter::Log
+    def self.info(msg)
+      super("grpc: #{msg}")
+    end
+    def self.debug(msg)
+      super("grpc: #{msg}")
+    end
+    def self.warn(msg)
+      super("grpc: #{msg}")
+    end
+  end
+  def self.logger
+    DTKLogger
+  end
+end
+
+
 require_relative 'dtkarbiterservice_pb'
 
 module Dtkarbiterservice

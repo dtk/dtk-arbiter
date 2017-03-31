@@ -165,17 +165,32 @@ module DTK::Arbiter
         provider_message = generate_provider_message(@attributes, {:component_name => @component_name, :module_name => @module_name}, @protocol_version) #provider_message_hash.to_json
 
         Log.info "Sending a message to the gRPC daemon at #{grpc_address}"
-        Log.info "Sleeping for 10 seconds before sending the message"
-        sleep 10
         Log.info "Checking to see if grpc port is open:"
         port_check = port_open?(grpc_host, grpc_port)
         Log.info "#{port_check}"
+
+        if dtk_debugging?
+          require 'byebug'
+          require 'byebug/core'
+          Byebug.wait_connection = true
+          Byebug.start_server 'localhost'
+          debugger
+        end
+
+        # TODO: see if this provides more detailed grpc logging"
+        ENV['GRPC_TRACE'] = 'all'
+        ENV['GRPC_VERBOSITY'] = 'DEBUG'
 
         grpc_json_response = stub.process(Dtkarbiterservice::ProviderMessage.new(message: provider_message)).message
         Log.info 'gRPC daemon response received'
         ResponseHash.create_from_json(grpc_json_response)
       end
-      
+
+      DEBUG_ATTRIBUTE = 'dtk_debug_generic_worker'
+      def dtk_debugging?
+        (((@instance_attributes || {})[DEBUG_ATTRIBUTE] || {})[:value] || 'false') == 'true'
+      end
+
       PORT_RANGE = 50000..60000
       def generate_grpc_port
         port = nil
