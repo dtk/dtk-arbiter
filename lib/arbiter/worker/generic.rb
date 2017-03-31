@@ -177,10 +177,6 @@ module DTK::Arbiter
           debugger
         end
 
-        # TODO: see if this provides more detailed grpc logging"
-        ENV['GRPC_TRACE'] = 'all'
-        ENV['GRPC_VERBOSITY'] = 'DEBUG'
-
         grpc_json_response = stub.process(Dtkarbiterservice::ProviderMessage.new(message: provider_message)).message
         Log.info 'gRPC daemon response received'
         ResponseHash.create_from_json(grpc_json_response)

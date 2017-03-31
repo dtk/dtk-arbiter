@@ -31,6 +31,10 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 
+# TODO: see if this provides more detailed grpc logging"
+ENV['GRPC_TRACE'] = 'all'
+ENV['GRPC_VERBOSITY'] = 'DEBUG'
+
 require 'grpc'
 
 # GRPC is the general RPC module
