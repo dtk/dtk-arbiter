@@ -167,6 +167,10 @@ module DTK::Arbiter
         Log.info "Sending a message to the gRPC daemon at #{grpc_address}"
         Log.info "Sleeping for 10 seconds before sending the message"
         sleep 10
+        Log.info "Checking to see if grpc port is open:"
+        port_check = port_open?(grpc_host, grpc_port)
+        Log.info "#{port_check}"
+
         grpc_json_response = stub.process(Dtkarbiterservice::ProviderMessage.new(message: provider_message)).message
         Log.info 'gRPC daemon response received'
         ResponseHash.create_from_json(grpc_json_response)
