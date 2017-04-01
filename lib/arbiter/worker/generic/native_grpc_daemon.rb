@@ -6,6 +6,9 @@ module DTK::Arbiter
 
         #returns ResponseHash
         def invoke_action_when_native_grpc_daemon
+          # dynamically loading grpc classes
+          require_relative('grpc_helper')
+
           # spin up the gRPC daemon on the OS
           daemon_process_id, error_msg = NativeGrpcDaemon.start_grpc_daemon_with_retries(provider_entrypoint, grpc_port, grpc_address)
           unless daemon_process_id
@@ -50,7 +53,6 @@ module DTK::Arbiter
       
     # returns daemon_process_id  or nil
       def self.start_grpc_daemon?(provider_entrypoint, grpc_port)
-        return 123
         begin
           daemon_process_id = fork do
             ::Bundler.with_clean_env do

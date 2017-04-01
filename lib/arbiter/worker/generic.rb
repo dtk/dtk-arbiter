@@ -4,7 +4,6 @@ require 'timeout'
 module DTK::Arbiter
   class Worker
     class Generic < self
-      require_relative('generic/grpc_helper')
       require_relative('generic/response_hash')
       require_relative('generic/docker')
       require_relative('generic/native_grpc_daemon')
@@ -101,6 +100,15 @@ module DTK::Arbiter
           if ephemeral?
             invoke_action_when_container
           else
+
+            if dtk_debug_generic_worker?
+              require 'byebug'
+              require 'byebug/core'
+              Byebug.wait_connection = true
+              Byebug.start_server 'localhost'
+              debugger
+            end
+
             invoke_action_when_native_grpc_daemon
           end
 
@@ -168,22 +176,13 @@ module DTK::Arbiter
         Log.info "Checking to see if grpc port is open:"
         port_check = port_open?(grpc_host, grpc_port)
         Log.info "#{port_check}"
-
-        if dtk_debugging?
-          require 'byebug'
-          require 'byebug/core'
-          Byebug.wait_connection = true
-          Byebug.start_server 'localhost'
-          debugger
-        end
-
         grpc_json_response = stub.process(Dtkarbiterservice::ProviderMessage.new(message: provider_message)).message
         Log.info 'gRPC daemon response received'
         ResponseHash.create_from_json(grpc_json_response)
       end
 
       DEBUG_ATTRIBUTE = 'dtk_debug_generic_worker'
-      def dtk_debugging?
+      def dtk_debug_generic_worker?
         (((@instance_attributes || {})[DEBUG_ATTRIBUTE] || {})[:value] || 'false') == 'true'
       end
 
