@@ -23,7 +23,7 @@ module DTK::Arbiter
       
       NUMBER_OF_RETRIES  = 5
       TIME_BETWEEN_RETRY = 1
-      PAUSE_AFTER_START  = 5 # in seconds
+      PAUSE_AFTER_START  = 2 # in seconds
     
       # returns daemon_process_id or [nil, error_msg]
       def self.start_grpc_daemon_with_retries(provider_entrypoint, grpc_port, grpc_address)
@@ -41,7 +41,6 @@ module DTK::Arbiter
       end
       
       def self.stop_grpc_daemon(daemon_process_id)
-        Log.info "calling stop_grpc_daemon #{daemon_process_id}: #{$queue.inspect}"
         $queue.delete_at($queue.index({@task_id => daemon_process_id, 'type' => 'native'}) || $queue.length) unless $queue.empty?
         Process.kill('HUP', daemon_process_id) rescue nil
       end
