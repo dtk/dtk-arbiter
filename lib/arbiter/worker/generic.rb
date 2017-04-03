@@ -90,7 +90,7 @@ module DTK::Arbiter
 
       private
 
-      attr_reader :provider_entrypoint
+      attr_reader :provider_entrypoint, :task_id
       
       def dynamically_load_grpc
         self.class.dynamically_load_grpc
