@@ -111,15 +111,6 @@ module DTK::Arbiter
           if ephemeral?
             invoke_action_when_container
           else
-
-            if dtk_debug_generic_worker?
-              require 'byebug'
-              require 'byebug/core'
-              Byebug.wait_connection = true
-              Byebug.start_server 'localhost'
-              debugger
-            end
-
             invoke_action_when_native_grpc_daemon
           end
 
@@ -190,11 +181,6 @@ module DTK::Arbiter
         grpc_json_response = stub.process(Dtkarbiterservice::ProviderMessage.new(message: provider_message)).message
         Log.info 'gRPC daemon response received'
         ResponseHash.create_from_json(grpc_json_response)
-      end
-
-      DEBUG_ATTRIBUTE = 'dtk_debug_generic_worker'
-      def dtk_debug_generic_worker?
-        (((@instance_attributes || {})[DEBUG_ATTRIBUTE] || {})[:value] || 'false') == 'true'
       end
 
       PORT_RANGE = 50000..60000
