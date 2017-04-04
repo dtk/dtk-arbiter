@@ -42,7 +42,7 @@ module DTK::Arbiter
       
       def self.stop_grpc_daemon(daemon_process_id, task_id)
         $queue.delete_at($queue.index({task_id => daemon_process_id, 'type' => 'native'}) || $queue.length) unless $queue.empty?
-        Process.kill('HUP', daemon_process_id) rescue nil
+        Process.kill('SIGTERM', daemon_process_id) rescue nil
       end
       
       private

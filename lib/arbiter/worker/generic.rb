@@ -80,7 +80,7 @@ module DTK::Arbiter
               Docker::Container.stop_and_remove?(process_id) rescue false
             elsif process['type'] == 'native'
               Log.info "Killing process with a PID of #{process_id} as requested by cancel action"
-              Process.kill('HUP', process_id) rescue false
+              Process.kill('SIGTERM', process_id) rescue false
             else
               notify_of_error("Unrecognized process type in cancel task.", :abort_action)
             end
