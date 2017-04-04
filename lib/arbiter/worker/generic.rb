@@ -81,6 +81,7 @@ module DTK::Arbiter
             elsif process['type'] == 'native'
               Log.info "Killing process with a PID of #{process_id} as requested by cancel action"
               Process.kill('SIGTERM', process_id) rescue false
+              Process.detach(process_id)
             else
               notify_of_error("Unrecognized process type in cancel task.", :abort_action)
             end
