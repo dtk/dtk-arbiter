@@ -41,6 +41,7 @@ module DTK::Arbiter
 
         @execution_type         = get(:execution_environment)[:type]
         @dockerfile             = get(:execution_environment)[:docker_file]
+        @bash_script            = get(:execution_environment)[:bash]
         @provider_name_internal = "#{@provider_type}-provider"
         @provider_entrypoint    = "#{MODULE_DIR}/#{@provider_name_internal}/init"
 

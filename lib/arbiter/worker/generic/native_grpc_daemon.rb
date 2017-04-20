@@ -1,3 +1,6 @@
+require 'fileutils'
+require 'tempfile'
+
 module DTK::Arbiter
   class Worker::Generic
     module NativeGrpcDaemon
@@ -6,6 +9,8 @@ module DTK::Arbiter
 
         #returns ResponseHash
         def invoke_action_when_native_grpc_daemon
+          # run the bash script received in the message
+          ResponseHash.error("Failed to execute provider script") unless NativeGrpcDaemon.execute_bash(@bash_script)
           # spin up the gRPC daemon on the OS
           daemon_process_id, error_msg = NativeGrpcDaemon.start_grpc_daemon_with_retries(provider_entrypoint, grpc_port, grpc_address, task_id)
           unless daemon_process_id
@@ -62,6 +67,23 @@ module DTK::Arbiter
         rescue
           nil
         end
+      end
+
+      def self.execute_bash(script)
+        # write the bash script to a temp file
+        # make it executable
+        # and run it
+        bash_temp_file = Tempfile.new('bashscript.sh')
+        File.write(bash_temp_file, script)
+        FileUtils.chmod('u+x', bash_temp_file)
+        bash_temp_file.close
+        Log.info("Executing script: #{bash_temp_file.path}")
+        response = ''
+        ::Bundler.with_clean_env do
+          response = system(bash_temp_file.path)
+        end
+        bash_temp_file.unlink
+        response
       end
 
     end
