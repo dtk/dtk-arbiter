@@ -44,6 +44,8 @@ module DTK::Arbiter
         @bash_script            = get(:execution_environment)[:bash]
         @provider_name_internal = "#{@provider_type}-provider"
         @provider_entrypoint    = "#{MODULE_DIR}/#{@provider_name_internal}/init"
+        # set true for mocking purposes
+        @dtk_debug              = @provider_attributes[:dtk_debug] || true
 
         @task_id                = get(:task_id)
 
@@ -107,6 +109,7 @@ module DTK::Arbiter
         Log.info 'Starting generic worker run'
         # spin up the provider gRPC server
         set_grpc_port!(generate_grpc_port)
+        set_dtk_debug_port!(generate_debug_port) if @dtk_debug
 
         response_hash = 
           if ephemeral?
@@ -153,7 +156,15 @@ module DTK::Arbiter
       def set_grpc_port!(grpc_port)
         @grpc_port = grpc_port
       end
-      
+
+      def dtk_debug_port
+        @dtk_debug_port || fail("Unexpected that @dtk_debug_port is not set")
+      end
+
+      def set_dtk_debug_port!(dtk_debug_port)
+        @dtk_debug_port = dtk_debug_port
+      end
+
       def grpc_address
         "#{grpc_host}:#{grpc_port}"
       end
@@ -173,12 +184,28 @@ module DTK::Arbiter
         # send a message to the gRPC provider server/daemon
         stub = GrpcHelper.arbiter_service_stub(grpc_address, :this_channel_is_insecure, :timeout => 240)
         
-        provider_message = generate_provider_message(@attributes, {:component_name => @component_name, :module_name => @module_name}, @protocol_version) #provider_message_hash.to_json
+        provider_message = generate_provider_message(
+                           @attributes, 
+                           {:component_name => @component_name, 
+                            :module_name => @module_name, 
+                            :dtk_debug => @dtk_debug,
+                            :dtk_debug_port => dtk_debug_port}, 
+                           @protocol_version) #provider_message_hash.to_json
 
         Log.info "Sending a message to the gRPC daemon at #{grpc_address}"
         Log.info "Checking to see if grpc port is open:"
         port_check = port_open?(grpc_host, grpc_port)
         Log.info "#{port_check}"
+        # check for debug mode
+        # and send response with the debug port set as a dynamic attribute
+        if @dtk_debug
+          debug_response = {}
+          debug_response[:dynamic_attributes] = {:dtk_debug_port => dtk_debug_port}
+          debug_response[:success] = "true"
+          Log.info 'Entering debug mode'
+          return ResponseHash.create_from_json(debug_response.to_json)
+        end
+
         grpc_json_response = stub.process(Dtkarbiterservice::ProviderMessage.new(message: provider_message)).message
         Log.info 'gRPC daemon response received'
         ResponseHash.create_from_json(grpc_json_response)
@@ -192,8 +219,19 @@ module DTK::Arbiter
             return port
           end
         end
+        port = find_free_port(PORT_RANGE)
+        port
+      end
+
+      PORT_RANGE_DEBUG = 30000..40000
+      def generate_debug_port
+        find_free_port(PORT_RANGE_DEBUG)
+      end
+
+      def find_free_port(port_range)
+        port = nil
         while port.nil? or port_open?(grpc_host, port) do
-          port = rand(PORT_RANGE)
+          port = rand(port_range)
         end
         port
       end

@@ -62,6 +62,7 @@ module DTK::Arbiter
       end
 
       INTERNAL_CONTAINER_GRPC_PORT = '50051/tcp'
+      # TO-DO: expose the debug port also
       def self.exposed_ports
         { INTERNAL_CONTAINER_GRPC_PORT => {} }
       end
