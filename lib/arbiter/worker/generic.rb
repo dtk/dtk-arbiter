@@ -45,7 +45,7 @@ module DTK::Arbiter
         @provider_name_internal = "#{@provider_type}-provider"
         @provider_entrypoint    = "#{MODULE_DIR}/#{@provider_name_internal}/init"
         # set true for mocking purposes
-        @dtk_debug              = @provider_attributes[:dtk_debug] || true
+        @breakpoint              = @instance_attributes["performance_mode"]["breakpoint"] || true
 
         @task_id                = get(:task_id)
 
@@ -109,7 +109,7 @@ module DTK::Arbiter
         Log.info 'Starting generic worker run'
         # spin up the provider gRPC server
         set_grpc_port!(generate_grpc_port)
-        set_dtk_debug_port!(generate_debug_port) if @dtk_debug
+        set_dtk_debug_port!(generate_debug_port) if @breakpoint
 
         response_hash = 
           if ephemeral?
@@ -188,7 +188,7 @@ module DTK::Arbiter
                            @attributes, 
                            {:component_name => @component_name, 
                             :module_name => @module_name, 
-                            :dtk_debug => @dtk_debug,
+                            :breakpoint => @breakpoint,
                             :dtk_debug_port => dtk_debug_port}, 
                            @protocol_version) #provider_message_hash.to_json
 
@@ -198,7 +198,7 @@ module DTK::Arbiter
         Log.info "#{port_check}"
         # check for debug mode
         # and send response with the debug port set as a dynamic attribute
-        if @dtk_debug
+        if @breakpoint
           debug_response = {}
           debug_response[:dynamic_attributes] = {:dtk_debug_port => dtk_debug_port}
           debug_response[:success] = "true"
