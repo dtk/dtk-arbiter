@@ -184,12 +184,14 @@ module DTK::Arbiter
         # send a message to the gRPC provider server/daemon
         stub = GrpcHelper.arbiter_service_stub(grpc_address, :this_channel_is_insecure, :timeout => 240)
         
+        provider_opts = {:component_name => @component_name, 
+                         :module_name => @module_name, 
+                         :breakpoint => @breakpoint}
+        provider_opts.merge(:dtk_debug_port => dtk_debug_port) if @breakpoint
+
         provider_message = generate_provider_message(
                            @attributes, 
-                           {:component_name => @component_name, 
-                            :module_name => @module_name, 
-                            :breakpoint => @breakpoint,
-                            :dtk_debug_port => dtk_debug_port}, 
+                           provider_opts, 
                            @protocol_version) #provider_message_hash.to_json
 
         Log.info "Sending a message to the gRPC daemon at #{grpc_address}"
