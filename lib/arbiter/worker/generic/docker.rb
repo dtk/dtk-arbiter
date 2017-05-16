@@ -22,7 +22,7 @@ module DTK::Arbiter
             response_hash = ResponseHash.error(error_msg: error_msg)
           else
             response_hash = grpc_call_to_invoke_action
-            $queue.delete_at($queue.index({@task_id => docker_image_tag, 'type' => 'docker'}) || $queue.length) unless $queue.empty?
+            $queue.delete_at($queue.index({@task_id => container_name, 'type' => 'docker'}) || $queue.length) unless $queue.empty?
             Container.stop_and_remove?(container_name)
           end
           response_hash
@@ -30,17 +30,17 @@ module DTK::Arbiter
 
         # if ok sets docker_image_tag, if failure docker_image_tag is nil and error_msg is set
         def build_and_start_docker_container 
-          docker_image_tag = container_name
+          #docker_image_tag = container_name
           Log.info "Building docker image #{docker_image_tag}"
           Image.build(@dockerfile, docker_image_tag)
 
-          Log.info "Starting docker container #{docker_image_tag} on port #{grpc_port}"
+          Log.info "Starting docker container #{container_name} on port #{grpc_port}"
           status, error_msg = start_daemon_docker?
           if status == :failed
             [nil, error_msg]
           else
-            $queue << {@task_id => docker_image_tag, 'type' => 'docker'}
-            docker_image_tag
+            $queue << {@task_id => container_name, 'type' => 'docker'}
+            container_name
           end
         end
 
@@ -56,7 +56,7 @@ module DTK::Arbiter
 
           container = nil
           begin
-            Container.create_and_start(container_name, grpc_host, grpc_port)
+            Container.create_and_start(container_name, docker_image_tag, grpc_host, grpc_port)
           rescue => e
             return [:failed, "Failed to create and start the docker container '#{container_name}' (#{e.message})"]
           end
@@ -78,6 +78,10 @@ module DTK::Arbiter
 
         def container_name
           @container_name ||= "#{@service_instance}-#{@component_name}-#{@task_id}".tr(':','-')
+        end
+
+        def docker_image_tag
+          @docker_image_tag ||= "#{@service_instance}-#{@component_name}".tr(':','-')
         end
 
       end

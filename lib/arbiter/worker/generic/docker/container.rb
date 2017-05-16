@@ -2,8 +2,8 @@ require 'docker'
 module DTK::Arbiter
   module Worker::Generic::Docker
     module Container
-      def self.create_and_start(container_name, grpc_host, grpc_port)
-        container = ::Docker::Container.create(create_params_hash(container_name, grpc_host, grpc_port))
+      def self.create_and_start(container_name, docker_image, grpc_host, grpc_port)
+        container = ::Docker::Container.create(create_params_hash(container_name, docker_image, grpc_host, grpc_port))
         container.start
         container
       end
@@ -38,10 +38,10 @@ module DTK::Arbiter
         ::Docker::Container.get(container_name) rescue nil
       end
 
-      def self.create_params_hash(container_name, grpc_host, grpc_port)
+      def self.create_params_hash(container_name, docker_image, grpc_host, grpc_port)
         grpc_port = grpc_port.to_s
         {
-          'Image'        => container_name,
+          'Image'        => docker_image,
           'name'         => container_name,
           'Tty'          => true, # needed to run byebug when attach
           'OpenStdin'    => true, # needed to run byebug when attach
