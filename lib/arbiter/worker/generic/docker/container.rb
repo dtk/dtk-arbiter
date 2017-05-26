@@ -2,8 +2,8 @@ require 'docker'
 module DTK::Arbiter
   module Worker::Generic::Docker
     module Container
-      def self.create_and_start(container_name, docker_image, grpc_host, grpc_port)
-        container = ::Docker::Container.create(create_params_hash(container_name, docker_image, grpc_host, grpc_port))
+      def self.create_and_start(container_name, docker_image, grpc_host, grpc_port, debug_port)
+        container = ::Docker::Container.create(create_params_hash(container_name, docker_image, grpc_host, grpc_port, debug_port))
         container.start
         container
       end
@@ -38,7 +38,7 @@ module DTK::Arbiter
         ::Docker::Container.get(container_name) rescue nil
       end
 
-      def self.create_params_hash(container_name, docker_image, grpc_host, grpc_port)
+      def self.create_params_hash(container_name, docker_image, grpc_host, grpc_port, debug_port)
         grpc_port = grpc_port.to_s
         {
           'Image'        => docker_image,
@@ -46,16 +46,16 @@ module DTK::Arbiter
           'Tty'          => true, # needed to run byebug when attach
           'OpenStdin'    => true, # needed to run byebug when attach
           'ExposedPorts' => exposed_ports,
-          'HostConfig'   => host_config(grpc_port, grpc_host)
+          'HostConfig'   => host_config(grpc_port, grpc_host, debug_port)
         }
       end  
 
-      def self.host_config(grpc_port, grpc_host)
+      def self.host_config(grpc_port, grpc_host, debug_port)
         # if running inside docker, use host volume to mount modules instead of internal module path
         module_dir = ENV['HOST_VOLUME'].nil? ? Worker::Generic::MODULE_DIR : "#{ENV['HOST_VOLUME']}/modules"
         
         {
-          'PortBindings' => port_bindings(grpc_port, grpc_host),
+          'PortBindings' => port_bindings(grpc_port, grpc_host, debug_port),
           'Binds'        => ["#{module_dir}:#{Worker::Generic::MODULE_DIR}"]
         }
 
@@ -67,7 +67,8 @@ module DTK::Arbiter
         { INTERNAL_CONTAINER_GRPC_PORT => {} }
       end
 
-      def self.port_bindings(grpc_port, grpc_host)
+      def self.port_bindings(grpc_port, grpc_host, debug_port)
+        require 'byebug'; debugger
         { INTERNAL_CONTAINER_GRPC_PORT => [{ 'HostPort' => grpc_port, 'HostIp' => grpc_host }] }
       end
         
