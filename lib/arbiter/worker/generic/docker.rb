@@ -23,7 +23,7 @@ module DTK::Arbiter
           else
             response_hash = grpc_call_to_invoke_action
             $queue.delete_at($queue.index({@task_id => container_name, 'type' => 'docker'}) || $queue.length) unless $queue.empty?
-            Container.stop_and_remove?(container_name)
+            Container.stop_and_remove?(container_name) unless response_hash["dynamic_attributes"].nil?
           end
           response_hash
         end
@@ -56,7 +56,7 @@ module DTK::Arbiter
 
           container = nil
           begin
-            Container.create_and_start(container_name, docker_image_tag, grpc_host, grpc_port)
+            Container.create_and_start(container_name, docker_image_tag, grpc_host, grpc_port, dtk_debug_port)
           rescue => e
             return [:failed, "Failed to create and start the docker container '#{container_name}' (#{e.message})"]
           end
