@@ -45,7 +45,11 @@ module DTK::Arbiter
         @provider_name_internal = "#{@provider_type}-provider"
         @provider_entrypoint    = "#{MODULE_DIR}/#{@provider_name_internal}/init"
         # set true for mocking purposes
+<<<<<<< HEAD
         $breakpoint             = message_content[:breakpoint]
+=======
+        $breakpoint              = true || @instance_attributes["performance_mode"]["breakpoint"]
+>>>>>>> DTK-2971: Expose docker port
 
         @task_id                = get(:task_id)
 
@@ -200,7 +204,6 @@ module DTK::Arbiter
         Log.info "#{port_check}"
         # check for debug mode
         # and send response with the debug port set as a dynamic attribute
-        #BreakpointHere
         if $breakpoint
           debug_response = {}
           debug_response[:dynamic_attributes] = {:dtk_debug_port => dtk_debug_port}
