@@ -3,7 +3,6 @@ module DTK::Arbiter
   module Worker::Generic::Docker
     module Container
       def self.create_and_start(container_name, docker_image, grpc_host, grpc_port, debug_port)
-        require 'byebug'; debugger
         container = ::Docker::Container.create(create_params_hash(container_name, docker_image, grpc_host, grpc_port, debug_port))
         container.start
         container
@@ -69,7 +68,6 @@ module DTK::Arbiter
       end
 
       def self.port_bindings(grpc_port, grpc_host, debug_port)
-        require 'byebug'; debugger
         bindings = { INTERNAL_CONTAINER_GRPC_PORT => [{ 'HostPort' => grpc_port, 'HostIp' => grpc_host }] }
         debug_bindings = { "#{debug_port}/tcp" => [{ 'HostPort' => debug_port.to_s }] }
         bindings.merge!(debug_bindings) if $breakpoint
