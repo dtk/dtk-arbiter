@@ -37,12 +37,12 @@ module DTK::Arbiter
       private :initialize
 
       def process
-        # we need this to pull our modules
-        git_server = Config.git_server
+        # # we need this to pull our modules
+        # git_server = Config.git_server
 
-        # pulling modules and preparing environment for changes
-        Log.info 'Pulling modules from DTK'
-        response = Utils::Git.pull_modules(get(:version_context), git_server, PUPPET_MODULE_PATH)
+        # # pulling modules and preparing environment for changes
+        # Log.info 'Pulling modules from DTK'
+        # response = Utils::Git.pull_modules(get(:version_context), git_server, PUPPET_MODULE_PATH)
 
         # finally run puppet execution
         puppet_run_response = run
@@ -87,7 +87,7 @@ module DTK::Arbiter
             temp_run_file.close
 
 
-            command_string = "#{cmd} apply #{temp_run_file.path} --debug --modulepath #{PUPPET_MODULE_PATH}"
+            command_string = "#{cmd} apply #{temp_run_file.path} --debug --modulepath #{MODULE_PATH}"
 
             yum_lock_retries = YUM_LOCK_RETRIES
 

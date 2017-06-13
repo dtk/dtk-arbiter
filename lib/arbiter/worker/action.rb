@@ -16,6 +16,13 @@ module DTK::Arbiter
       private :initialize
 
       def process
+        # we need this to pull our modules
+        git_server = Config.git_server
+
+        # pulling modules and preparing environment for changes
+        Log.info 'Pulling modules from DTK'
+        response = Utils::Git.pull_modules(get(:modules), git_server)
+
         if @execution_list.empty?
           notify_of_error("Execution list is not provided or empty, Action Worker has nothing to run!", :missing_params)
           return

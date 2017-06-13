@@ -15,7 +15,7 @@ module DTK
 
       attr_accessor :stomp_url, :stomp_port, :stomp_username, :stomp_password,
                     :inbox_topic, :outbox_queue, :private_key, :git_server, :pbuilderid, :pulse_interval,
-                    :connect_retries, :connect_time
+                    :connect_retries, :connect_time, :git_pull_modules
 
       def initialize
         config = load_arbiter_configuration
@@ -28,6 +28,9 @@ module DTK
         @outbox_queue = ENV['OUTBOX_queue'] || retrieve_config!('arbiter_queue', config)
         @private_key = retrieve_config!('private_key', config)
         @git_server = retrieve_config!('git_server', config)
+        # always pull modules unless the config property
+        # is explicitly set to 'false'
+        @git_pull_modules = retrieve_config('git_pull_modules', config) == 'false' ? false : true
         @pbuilderid = retrieve_config('pbuilderid', config) || collect_pbuilderid
         @pulse_interval = retrieve_config('pulse_interval', config) || DEFAULT_PULSE_INTERVAL
         @connect_retries = retrieve_config('connect_retries', config) || DEFAULT_CONNECT_RETRIES
@@ -95,6 +98,10 @@ module DTK
 
       def self.connect_time
         instance.connect_time
+      end
+
+      def self.git_pull_modules
+        instance.git_pull_modules
       end
 
     private
