@@ -32,6 +32,10 @@ module DTK::Arbiter
       end
 
       def self.pull_modules(modules,git_server,symlink_location = nil)
+        unless Config.git_pull_modules
+          Log.info("Skipping module pull since 'git_pull_modules' is set to false in arbiter.cfg")
+          return true
+        end
         begin
 
           # check if modules are passed in deprecated format

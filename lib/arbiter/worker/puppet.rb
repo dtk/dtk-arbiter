@@ -37,12 +37,12 @@ module DTK::Arbiter
       private :initialize
 
       def process
-        # # we need this to pull our modules
-        # git_server = Config.git_server
+        # we need this to pull our modules
+        git_server = Config.git_server
 
-        # # pulling modules and preparing environment for changes
-        # Log.info 'Pulling modules from DTK'
-        # response = Utils::Git.pull_modules(get(:version_context), git_server, PUPPET_MODULE_PATH)
+        # pulling modules and preparing environment for changes
+        Log.info 'Pulling modules from DTK'
+        response = Utils::Git.pull_modules(get(:version_context), git_server, PUPPET_MODULE_PATH)
 
         # finally run puppet execution
         puppet_run_response = run
