@@ -22,7 +22,6 @@ module DTK
         @request_id       = @received_message[:request_id]
         @service_name     = @received_message[:service_name]
 
-        response = pull_modules(message)
       end
       private :initialize
 
@@ -85,19 +84,6 @@ module DTK
 
       def is_puppet_apply?
         (:puppet_apply == agent_name)
-      end
-
-      def pull_modules(message)
-        # we need this to pull our modules
-        git_server = Config.git_server
-        modules = message[:modules]
-
-        # puppet worker is still a special case
-        if modules && Config.git_pull_modules
-          # pulling modules and preparing environment for changes
-          Log.info 'Pulling modules from DTK inside worker'
-          Utils::Git.pull_modules(modules, git_server)
-        end
       end
 
     protected
