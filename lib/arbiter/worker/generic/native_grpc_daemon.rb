@@ -26,7 +26,7 @@ module DTK::Arbiter
 
       
       
-      NUMBER_OF_RETRIES  = 5
+      NUMBER_OF_RETRIES  = 10
       TIME_BETWEEN_RETRY = 1
     
       # returns daemon_process_id or [nil, error_msg]
