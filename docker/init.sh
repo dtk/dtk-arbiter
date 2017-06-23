@@ -48,4 +48,7 @@ if ! grep -q "$host_key" ~/.ssh/known_hosts >/dev/null 2>&1; then
 fi
 rm /tmp/ssh_host.tmp
 
+# make sure cron is running
+cron
+
 /opt/puppet-omnibus/embedded/bin/ruby start.rb --foreground
