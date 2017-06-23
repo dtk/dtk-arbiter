@@ -27,6 +27,9 @@ end.parse!
 include DTK
 Arbiter::PBUILDER_ID = Arbiter::Config.pbuilderid
 
+# Perform setup
+Arbiter::Utils::Setup.run
+
 # DAEMONIZE
 if options[:daemonize]
   Arbiter::Log.debug "Daemonizing arbiter"
