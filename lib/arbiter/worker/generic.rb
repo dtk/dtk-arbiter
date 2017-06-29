@@ -174,7 +174,6 @@ module DTK::Arbiter
         stub = GrpcHelper.arbiter_service_stub(grpc_address, :this_channel_is_insecure, :timeout => 240)
         
         provider_message = generate_provider_message(@attributes, {:component_name => @component_name, :module_name => @module_name}, @protocol_version) #provider_message_hash.to_json
-
         Log.info "Sending a message to the gRPC daemon at #{grpc_address}"
         Log.info "Checking to see if grpc port is open:"
         port_check = port_open?(grpc_host, grpc_port)
@@ -183,6 +182,19 @@ module DTK::Arbiter
         Log.info 'gRPC daemon response received'
         ResponseHash.create_from_json(grpc_json_response)
       end
+
+      def grpc_status_check
+        stub = GrpcHelper.arbiter_service_stub(grpc_address, :this_channel_is_insecure, :timeout => 240)
+        status_request_message = {:request_type => 'status'}.to_json
+        begin
+          grpc_json_response = stub.process(Dtkarbiterservice::ProviderMessage.new(message: status_request_message)).message
+          grpc_response = JSON.parse(grpc_json_response)
+          return grpc_response['status'] == 'ok'
+        rescue
+          false
+        end
+      end
+
 
       PORT_RANGE = 50000..60000
       def generate_grpc_port

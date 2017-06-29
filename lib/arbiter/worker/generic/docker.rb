@@ -64,7 +64,9 @@ module DTK::Arbiter
           tries ||= Docker::OpenPortCheck::NUMBER_OF_RETRIES
           until (tries -= 1).zero?
             sleep Docker::OpenPortCheck::TIME_BETWEEN_RETRY
-            break if port_open?(grpc_host, grpc_port)
+            Log.debug "Checking gRPC daemon port, retry #: #{tries}"
+            Log.debug "gRPC status check: #{grpc_status_check}"
+            break if port_open?(grpc_host, grpc_port) || grpc_status_check
           end
           unless port_open?(grpc_host, grpc_port)
             return [:failed, "Failed to start docker gRPC daemon"]

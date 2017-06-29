@@ -26,8 +26,8 @@ module DTK::Arbiter
 
       
       
-      NUMBER_OF_RETRIES  = 10
-      TIME_BETWEEN_RETRY = 1
+      NUMBER_OF_RETRIES  = 15
+      TIME_BETWEEN_RETRY = 2
     
       # returns daemon_process_id or [nil, error_msg]
       def start_grpc_daemon_with_retries(provider_entrypoint, grpc_port, grpc_address, grpc_host, task_id)
@@ -39,8 +39,10 @@ module DTK::Arbiter
             Log.info "Started gRPC daemon natively on #{grpc_address}"
             tries ||= NUMBER_OF_RETRIES
             until (tries -= 1).zero?
+              Log.debug "Checking gRPC daemon port, retry #: #{tries}"
+              Log.debug "gRPC status check: #{grpc_status_check}"
               sleep TIME_BETWEEN_RETRY
-              break if port_open?(grpc_host, grpc_port)
+              break if port_open?(grpc_host, grpc_port) || grpc_status_check
             end
             unless port_open?(grpc_host, grpc_port)
               stop_grpc_daemon(daemon_process_id, task_id)
