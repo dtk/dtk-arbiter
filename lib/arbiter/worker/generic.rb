@@ -45,12 +45,7 @@ module DTK::Arbiter
         @provider_name_internal = "#{@provider_type}-provider"
         @provider_entrypoint    = "#{MODULE_DIR}/#{@provider_name_internal}/init"
         # set true for mocking purposes
-<<<<<<< HEAD
         $breakpoint             = message_content[:breakpoint]
-=======
-        $breakpoint              = true || @instance_attributes["performance_mode"]["breakpoint"]
->>>>>>> DTK-2971: Expose docker port
-
         @task_id                = get(:task_id)
 
         # Make sure following is prepared
@@ -211,6 +206,7 @@ module DTK::Arbiter
           Log.info 'Entering debug mode'
           grpc_json_response = stub.process(Dtkarbiterservice::ProviderMessage.new(message: provider_message)).message
           return ResponseHash.create_from_json(debug_response.to_json)
+          
         end
 
         grpc_json_response = stub.process(Dtkarbiterservice::ProviderMessage.new(message: provider_message)).message
