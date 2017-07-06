@@ -45,7 +45,7 @@ module DTK::Arbiter
         @provider_name_internal = "#{@provider_type}-provider"
         @provider_entrypoint    = "#{MODULE_DIR}/#{@provider_name_internal}/init"
         # set true for mocking purposes
-        $breakpoint              = true || @instance_attributes["performance_mode"]["breakpoint"]
+        $breakpoint             = message_content[:breakpoint]
 
         @task_id                = get(:task_id)
 
@@ -187,7 +187,7 @@ module DTK::Arbiter
         provider_opts = {:component_name => @component_name, 
                          :module_name => @module_name, 
                          :breakpoint => $breakpoint}
-        provider_opts.merge(:dtk_debug_port => dtk_debug_port) if $breakpoint
+        provider_opts.merge!(:dtk_debug_port => dtk_debug_port, :dtk_debug => $breakpoint) if $breakpoint
 
         provider_message = generate_provider_message(
                            @attributes, 
@@ -205,7 +205,9 @@ module DTK::Arbiter
           debug_response[:dynamic_attributes] = {:dtk_debug_port => dtk_debug_port}
           debug_response[:success] = "true"
           Log.info 'Entering debug mode'
+          grpc_json_response = stub.process(Dtkarbiterservice::ProviderMessage.new(message: provider_message)).message
           return ResponseHash.create_from_json(debug_response.to_json)
+          
         end
 
         grpc_json_response = stub.process(Dtkarbiterservice::ProviderMessage.new(message: provider_message)).message
