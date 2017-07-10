@@ -64,12 +64,16 @@ module DTK::Arbiter
       INTERNAL_CONTAINER_GRPC_PORT = '50051/tcp'
       # TO-DO: expose the debug port also
       def self.exposed_ports(debug_port)
-        { INTERNAL_CONTAINER_GRPC_PORT => {}, "#{debug_port}/tcp" => {} }
+        if $breakpoint
+          return { INTERNAL_CONTAINER_GRPC_PORT => {}, "#{debug_port}/tcp" => {} }
+        else
+          { INTERNAL_CONTAINER_GRPC_PORT => {} } 
+        end
       end
 
       def self.port_bindings(grpc_port, grpc_host, debug_port)
         bindings = { INTERNAL_CONTAINER_GRPC_PORT => [{ 'HostPort' => grpc_port, 'HostIp' => grpc_host }] }
-        debug_bindings = { "#{debug_port}/tcp" => [{ 'HostPort' => debug_port.to_s, 'HostIp' => '0.0.0.0' }] }
+        debug_bindings = { "#{debug_port}/tcp" => [{ 'HostPort' => debug_port.to_s, 'HostIp' => '0.0.0.0' }] } if $breakpoint
         bindings.merge!(debug_bindings) if $breakpoint
         bindings
       end
