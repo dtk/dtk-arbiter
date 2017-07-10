@@ -158,7 +158,7 @@ module DTK::Arbiter
       end
 
       def dtk_debug_port
-        @dtk_debug_port || fail("Unexpected that @dtk_debug_port is not set")
+        @dtk_debug_port || 8989 #fail("Unexpected that @dtk_debug_port is not set")
       end
 
       def set_dtk_debug_port!(dtk_debug_port)
@@ -200,6 +200,7 @@ module DTK::Arbiter
         Log.info "#{port_check}"
         # check for debug mode
         # and send response with the debug port set as a dynamic attribute
+        #BreakpointHere
         if $breakpoint
           debug_response = {}
           debug_response[:dynamic_attributes] = {:dtk_debug_port => dtk_debug_port}
@@ -207,7 +208,6 @@ module DTK::Arbiter
           Log.info 'Entering debug mode'
           grpc_json_response = stub.process(Dtkarbiterservice::ProviderMessage.new(message: provider_message)).message
           return ResponseHash.create_from_json(debug_response.to_json)
-          
         end
 
         grpc_json_response = stub.process(Dtkarbiterservice::ProviderMessage.new(message: provider_message)).message
