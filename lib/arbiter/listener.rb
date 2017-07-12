@@ -8,10 +8,24 @@ module DTK
       require_relative('worker/generic')
       
       Log.debug "Initializing arbiter"
+
+      THREADS_PER_CPU = 4
+
+      # returns number of CPU cores available
+      def cpu_count
+        return Java::Java.lang.Runtime.getRuntime.availableProcessors if defined? Java::Java
+        return File.read('/proc/cpuinfo').scan(/^processor\s*:/).size if File.exist? '/proc/cpuinfo'
+        require 'win32ole'
+        WIN32OLE.connect("winmgmts://").ExecQuery("select * from Win32_ComputerSystem").NumberOfProcessors
+      rescue LoadError
+        Integer `sysctl -n hw.ncpu 2>/dev/null` rescue 1
+      end
       
       def connection_completed
         connect :login => Config.stomp_username, :passcode => Config.stomp_password
         @thread_pool = {}
+        @thread_pool_max_size = (cpu_count * THREADS_PER_CPU)
+        @thread_queue = []
         @puppet_apply_running  = false
         @puppet_apply_queue = []
         Log.info "Arbiter listener has been successfully started. Listening to #{Config.full_url} ..."
@@ -115,7 +129,7 @@ module DTK
       def send_hearbeat
         # we do not have sucess
         update({ :status => :succeeded }, 1, false, true)
-        Log.debug "Heatbeat has been sent to '#{Config.outbox_queue}' for instance '#{Arbiter::PBUILDER_ID}' ..."
+        Log.debug "Heartbeat has been sent to '#{Config.outbox_queue}' for instance '#{Arbiter::PBUILDER_ID}' ..."
       end
 
       def process_message(msg)
@@ -149,6 +163,7 @@ module DTK
           Log.warn "Not able to resolve request id from given message, dropping message."
           return
         end
+
           
         ##
         # If there is puppet apply running than queue this execution, else just run concurrentl
@@ -156,6 +171,10 @@ module DTK
         if worker.is_puppet_apply? && @puppet_apply_running
           Log.info "Arbiter worker has been queued #{worker} with request id #{worker.request_id}, waiting for execution ..."
           @puppet_apply_queue.push(worker)
+        # if there are already @thread_pool_max_size tasks running, add to queue instead of executing immediately
+        elsif @thread_pool.size > 2
+          Log.info "Arbiter worker has been queued #{worker} with request id #{worker.request_id}, waiting for execution ..."
+          @thread_queue.push(worker)
         else
           Log.info "Arbiter worker has been chosen #{worker} with request id #{worker.request_id}, starting work ..."
           run_task_concurrently(worker)
@@ -179,7 +198,7 @@ module DTK
             Log.fatal(e.message, e.backtrace)
             worker.notify_of_error(e.message, :internal)
           ensure
-            # we unluck concurrency and trigger next puppet apply task
+            # we unlock concurrency and trigger next puppet apply task
             if worker.is_puppet_apply? && @puppet_apply_running
               @puppet_apply_running = false
               unless @puppet_apply_queue.empty?
@@ -187,6 +206,11 @@ module DTK
                 Log.info "Arbiter worker has been un-queued #{queued_instance} with request id #{queued_instance.request_id}, starting work ..."
                 run_task_concurrently(queued_instance)
               end
+            end
+            unless @thread_queue.empty?
+              queued_worker = @thread_queue.pop
+              Log.info "Arbiter worker has been un-queued #{queued_worker} with request id #{queued_worker.request_id}, starting work ..."
+              run_task_concurrently(queued_worker)
             end
           end
         end)
