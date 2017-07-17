@@ -93,13 +93,13 @@ module DTK::Arbiter
       end
 
 
-       def self.debug_message(message)
-        if message[:breakpoint] && message[:worker] == 'generic'
-          return
-        else
-          notify_of_error("Unrecognized process type in cancel task.", :abort_action)
-        end
-       end
+      #  def self.debug_message(message)
+      #   if message[:breakpoint] && message[:worker] == 'generic'
+      #     return
+      #   else
+      #     notify_of_error("Unrecognized process type in cancel task.", :abort_action)
+      #   end
+      #  end
 
       private
 
