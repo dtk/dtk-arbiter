@@ -22,8 +22,8 @@ module DTK::Arbiter
             response_hash = ResponseHash.error(error_msg: error_msg)
           else
             response_hash = grpc_call_to_invoke_action
-            $queue.delete_at($queue.index({@task_id => container_name, 'type' => 'docker'}) || $queue.length) unless $queue.empty?
-            Container.stop_and_remove?(container_name) unless response_hash["dynamic_attributes"].nil?
+            $queue.delete_at($queue.index({@task_id => container_name, 'type' => 'docker'}) || $queue.length) unless $queue.empty? 
+            Container.stop_and_remove?(container_name) unless $breakpoint
           end
           response_hash
         end

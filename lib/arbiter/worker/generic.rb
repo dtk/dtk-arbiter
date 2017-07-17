@@ -46,6 +46,7 @@ module DTK::Arbiter
         @provider_entrypoint    = "#{MODULE_DIR}/#{@provider_name_internal}/init"
         # set true for mocking purposes
         $breakpoint             = message_content[:breakpoint]
+        @debug_port_request     = message_content[:debug_port_request]
 
         @task_id                = get(:task_id)
 
@@ -91,6 +92,15 @@ module DTK::Arbiter
         end
       end
 
+
+       def self.debug_message(message)
+        if message[:breakpoint] && message[:worker] == 'generic'
+          return
+        else
+          notify_of_error("Unrecognized process type in cancel task.", :abort_action)
+        end
+       end
+
       private
 
       attr_reader :provider_entrypoint, :task_id
@@ -110,6 +120,13 @@ module DTK::Arbiter
         # spin up the provider gRPC server
         set_grpc_port!(generate_grpc_port)
         set_dtk_debug_port!(generate_debug_port) if $breakpoint
+        
+        if debug_port_request 
+          debug_response = {}
+          debug_response[:dynamic_attributes] = {:dtk_debug_port => dtk_debug_port}
+          debug_response[:success] = "true"
+          return ResponseHash.create_from_json(debug_response.to_json)
+        end
 
         response_hash = 
           if ephemeral?
@@ -201,14 +218,10 @@ module DTK::Arbiter
         # check for debug mode
         # and send response with the debug port set as a dynamic attribute
         #BreakpointHere
-        if $breakpoint
-          debug_response = {}
-          debug_response[:dynamic_attributes] = {:dtk_debug_port => dtk_debug_port}
-          debug_response[:success] = "true"
-          Log.info 'Entering debug mode'
-          grpc_json_response = stub.process(Dtkarbiterservice::ProviderMessage.new(message: provider_message)).message
-          return ResponseHash.create_from_json(debug_response.to_json)
-        end
+        # if $breakpoint
+        #   Thread.new(){stub.process(Dtkarbiterservice::ProviderMessage.new(message: provider_message)).message} 
+        #   return ResponseHash.create_from_json(debug_response.to_json)
+        # end
 
         grpc_json_response = stub.process(Dtkarbiterservice::ProviderMessage.new(message: provider_message)).message
         Log.info 'gRPC daemon response received'
