@@ -135,13 +135,12 @@ module DTK
         # determine the worker to handle payload
         Log.debug "Received message: #{Utils::Sanitize.sanitize_message(decoded_message)}"
         unless worker = Worker.create?(decoded_message, self)
-            unless ::DTK::Arbiter::Worker::Generic.cancel_task(decoded_message)
-              unless handle_cancel_action?(decoded_message)
-                # no worker?! drop the message
-                Log.warn "Not able to resolve desired worker from given message, dropping message."
-              end
+          unless ::DTK::Arbiter::Worker::Generic.cancel_task(decoded_message)
+            unless handle_cancel_action?(decoded_message)
+              # no worker?! drop the message
+              Log.warn "Not able to resolve desired worker from given message, dropping message."
             end
-          
+          end
           return
         end
           
