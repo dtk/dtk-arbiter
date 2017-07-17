@@ -17,7 +17,7 @@ module DTK::Arbiter
       	if !File.exist?(cron_file_target) || !FileUtils.identical?(cron_file_path, cron_file_target)
     	    Log.info('Installing/updating dtk-arbiter cron file')
     	    FileUtils.cp(cron_file_path, cron_file_target)
-    	    FileUtils.chmod 0755, '/usr/bin/ruby'
+    	    FileUtils.chmod(0755, cron_file_target)
       	end
       end
 
