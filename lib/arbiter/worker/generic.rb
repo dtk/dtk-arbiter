@@ -119,13 +119,14 @@ module DTK::Arbiter
         Log.info 'Starting generic worker run'
         # spin up the provider gRPC server
         set_grpc_port!(generate_grpc_port)
-        set_dtk_debug_port!(generate_debug_port) if $breakpoint
+        set_dtk_debug_port!(generate_debug_port) if @debug_port_request
         
-        if debug_port_request 
+        if @debug_port_request 
           debug_response = {}
-          debug_response[:dynamic_attributes] = {:dtk_debug_port => dtk_debug_port}
+          debug_response[:dynamic_attributes] = {:dtk_debug_port => @dtk_debug_port}
           debug_response[:success] = "true"
-          return ResponseHash.create_from_json(debug_response.to_json)
+          response_hash =  ResponseHash.create_from_json(debug_response.to_json)
+          return response_hash.raw_hash_form
         end
 
         response_hash = 
