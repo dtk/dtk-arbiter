@@ -1,3 +1,5 @@
+Generic.rb 
+
 require 'socket'
 require 'timeout'
 
@@ -47,9 +49,11 @@ module DTK::Arbiter
         @debug_port_request     = message_content[:debug_port_request]
         @debug_port_received    = message_content[:debug_port_received]
         @dtk_debug_port         = @debug_port_received unless @debug_port_received.nil?
-
+        Log.info("Received port from server: #{@debug_port_received}")
+        Log.info("Port request is: #{@debug_port_request}")
+        Log.info("Current Debug port is: #{@dtk_debug_port}")
         @task_id                = get(:task_id)
-	
+
         # Make sure following is prepared
         FileUtils.mkdir_p(MODULE_DIR, mode: 0755) unless File.directory?(MODULE_DIR)
       end
@@ -119,6 +123,7 @@ module DTK::Arbiter
         Log.info 'Starting generic worker run'
         # spin up the provider gRPC server
         set_grpc_port!(generate_grpc_port)
+        Log.info("Generate port if this #{@debug_port_request}")
         set_dtk_debug_port!(generate_debug_port) if $dtk_debug_port.nil?
 
         if @debug_port_request
@@ -127,12 +132,14 @@ module DTK::Arbiter
           debug_response[:dynamic_attributes] = {:dtk_debug_port => @dtk_debug_port}
           debug_response[:success] = "true"
           response_hash =  ResponseHash.create_from_json(debug_response.to_json)
+          Log.info("Returning port is:#{@dtk_debug_port}")
+          Log.info("dtk_port without @: #{dtk_debug_port}")
           return response_hash.raw_hash_form
         end
-        
         response_hash =
           if ephemeral?
-            $dtk_debug_port = @dtk_debug_port if $dtk_debug_port.nil?
+             Log.info("Ports are snet to container: #{@dtk_debug_port} and #{dtk_debug_port}")
+            $dtk_debug_port = @dtk_debug_port
             invoke_action_when_container
           else
             invoke_action_when_native_grpc_daemon
@@ -181,8 +188,12 @@ module DTK::Arbiter
         @dtk_debug_port || 8989 #fail("Unexpected that @dtk_debug_port is not set")
       end
 
-      def set_dtk_debug_port!(dtk_debug_port)        
-        @dtk_debug_port = dtk_debug_port if @dtk_debug_port.nil?
+      def set_dtk_debug_port!(dtk_debug_port)
+        if @dtk_debug_port.nil?
+          @dtk_debug_port = dtk_debug_port
+        else
+          return @dtk_debug_port
+        end
       end
 
       def grpc_address
@@ -245,7 +256,7 @@ module DTK::Arbiter
 
       PORT_RANGE_DEBUG = 30000..40000
       def generate_debug_port
-        find_free_port(PORT_RANGE_DEBUG)
+        find_free_port(PORT_RANGE_DEBUG) if @dtk_debug_port.nil?
       end
 
       def find_free_port(port_range)
