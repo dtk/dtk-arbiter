@@ -47,6 +47,7 @@ module DTK::Arbiter
         # set true for mocking purposes
         $breakpoint             = message_content[:breakpoint]
         @debug_port_request     = message_content[:debug_port_request]
+        @debug_port_received    = message_content[:debug_port_received] unless message_content[:debug_port_received].nil? 
 
         @task_id                = get(:task_id)
 
@@ -119,7 +120,8 @@ module DTK::Arbiter
         Log.info 'Starting generic worker run'
         # spin up the provider gRPC server
         set_grpc_port!(generate_grpc_port)
-        set_dtk_debug_port!(generate_debug_port) if @debug_port_request
+        set_dtk_debug_port!(generate_debug_port) 
+        
         
         if @debug_port_request 
           debug_response = {}
@@ -180,7 +182,11 @@ module DTK::Arbiter
       end
 
       def set_dtk_debug_port!(dtk_debug_port)
-        @dtk_debug_port = dtk_debug_port
+        if @debug_port_received.nil?
+            @dtk_debug_port = dtk_debug_port
+        else 
+          @dtk_debug_port = @debug_port_received
+        end
       end
 
       def grpc_address
