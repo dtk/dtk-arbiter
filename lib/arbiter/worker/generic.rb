@@ -1,5 +1,3 @@
-Generic.rb 
-
 require 'socket'
 require 'timeout'
 
