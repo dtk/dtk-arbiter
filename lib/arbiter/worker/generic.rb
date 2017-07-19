@@ -119,18 +119,20 @@ module DTK::Arbiter
         Log.info 'Starting generic worker run'
         # spin up the provider gRPC server
         set_grpc_port!(generate_grpc_port)
-        set_dtk_debug_port!(generate_debug_port) if @dtk_debug_port.nil?
+        set_dtk_debug_port!(generate_debug_port) if $dtk_debug_port.nil?
 
         if @debug_port_request
+          @dtk_debug_port = $dtk_debug_port if @dtk_debug_port.nil?
           debug_response = {}
           debug_response[:dynamic_attributes] = {:dtk_debug_port => @dtk_debug_port}
           debug_response[:success] = "true"
           response_hash =  ResponseHash.create_from_json(debug_response.to_json)
           return response_hash.raw_hash_form
         end
-
+        
         response_hash =
           if ephemeral?
+            $dtk_debug_port = @dtk_debug_port if $dtk_debug_port.nil?
             invoke_action_when_container
           else
             invoke_action_when_native_grpc_daemon
