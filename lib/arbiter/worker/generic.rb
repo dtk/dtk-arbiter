@@ -38,19 +38,18 @@ module DTK::Arbiter
         @instance_attributes    = @attributes[:instance]
 
         @modules                = get(:modules)
-
         @execution_type         = get(:execution_environment)[:type]
         @dockerfile             = get(:execution_environment)[:docker_file]
         @bash_script            = get(:execution_environment)[:bash]
         @provider_name_internal = "#{@provider_type}-provider"
         @provider_entrypoint    = "#{MODULE_DIR}/#{@provider_name_internal}/init"
-        # set true for mocking purposes
         $breakpoint             = message_content[:breakpoint]
         @debug_port_request     = message_content[:debug_port_request]
-        @debug_port_received    = message_content[:debug_port_received] unless message_content[:debug_port_received].nil? 
+        @debug_port_received    = message_content[:debug_port_received]
+        @dtk_debug_port         = @debug_port_received unless @debug_port_received.nil?
 
         @task_id                = get(:task_id)
-
+	
         # Make sure following is prepared
         FileUtils.mkdir_p(MODULE_DIR, mode: 0755) unless File.directory?(MODULE_DIR)
       end
@@ -105,7 +104,7 @@ module DTK::Arbiter
       private
 
       attr_reader :provider_entrypoint, :task_id
-      
+
       def dynamically_load_grpc
         self.class.dynamically_load_grpc
       end
@@ -120,10 +119,9 @@ module DTK::Arbiter
         Log.info 'Starting generic worker run'
         # spin up the provider gRPC server
         set_grpc_port!(generate_grpc_port)
-        set_dtk_debug_port!(generate_debug_port) 
-        
-        
-        if @debug_port_request 
+        set_dtk_debug_port!(generate_debug_port) if @dtk_debug_port.nil?
+
+        if @debug_port_request
           debug_response = {}
           debug_response[:dynamic_attributes] = {:dtk_debug_port => @dtk_debug_port}
           debug_response[:success] = "true"
@@ -131,7 +129,7 @@ module DTK::Arbiter
           return response_hash.raw_hash_form
         end
 
-        response_hash = 
+        response_hash =
           if ephemeral?
             invoke_action_when_container
           else
@@ -141,18 +139,18 @@ module DTK::Arbiter
         if response_hash.has_error?
           notify_of_error("#{@provider_type} provider reported the error: #{response_hash.error_message}", :abort_action)
         end
-        
+
         # add the gRPC address as a dynamic attribute
         (response_hash['dynamic_attributes'] ||= {})['grpc_address'] = grpc_address
         response_hash.raw_hash_form # needed because upstead assumes ::Hash objects
       end
-      
+
       def ephemeral?
         @execution_type == 'ephemeral_container'
       end
 
       def generate_provider_message(attributes, merge_hash, protocol_version)
-        converted_attributes = 
+        converted_attributes =
           case protocol_version
           when 1
             attributes.inject({}) do |h, (type, attributes_with_metadata)|
@@ -161,7 +159,7 @@ module DTK::Arbiter
           else
             attributes
           end
-        
+
         converted_attributes.merge(merge_hash).to_json
       end
 
@@ -181,18 +179,14 @@ module DTK::Arbiter
         @dtk_debug_port || 8989 #fail("Unexpected that @dtk_debug_port is not set")
       end
 
-      def set_dtk_debug_port!(dtk_debug_port)
-        if @debug_port_received.nil?
-            @dtk_debug_port = dtk_debug_port
-        else 
-          @dtk_debug_port = @debug_port_received
-        end
+      def set_dtk_debug_port!(dtk_debug_port)        
+        @dtk_debug_port = dtk_debug_port if @dtk_debug_port.nil?
       end
 
       def grpc_address
         "#{grpc_host}:#{grpc_port}"
       end
-      
+
       def arbiter_inside_docker?
         File.exist?('/.dockerenv')
       end
@@ -207,15 +201,15 @@ module DTK::Arbiter
       def grpc_call_to_invoke_action
         # send a message to the gRPC provider server/daemon
         stub = GrpcHelper.arbiter_service_stub(grpc_address, :this_channel_is_insecure, :timeout => 240)
-        
-        provider_opts = {:component_name => @component_name, 
-                         :module_name => @module_name, 
+
+        provider_opts = {:component_name => @component_name,
+                         :module_name => @module_name,
                          :breakpoint => $breakpoint}
         provider_opts.merge!(:dtk_debug_port => dtk_debug_port, :dtk_debug => $breakpoint) if $breakpoint
 
         provider_message = generate_provider_message(
-                           @attributes, 
-                           provider_opts, 
+                           @attributes,
+                           provider_opts,
                            @protocol_version) #provider_message_hash.to_json
 
         Log.info "Sending a message to the gRPC daemon at #{grpc_address}"
@@ -226,7 +220,7 @@ module DTK::Arbiter
         # and send response with the debug port set as a dynamic attribute
         #BreakpointHere
         # if $breakpoint
-        #   Thread.new(){stub.process(Dtkarbiterservice::ProviderMessage.new(message: provider_message)).message} 
+        #   Thread.new(){stub.process(Dtkarbiterservice::ProviderMessage.new(message: provider_message)).message}
         #   return ResponseHash.create_from_json(debug_response.to_json)
         # end
 
@@ -272,7 +266,7 @@ module DTK::Arbiter
       rescue ::Timeout::Error
         false
       end
-      
+
     end
   end
 end
