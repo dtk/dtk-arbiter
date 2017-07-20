@@ -122,22 +122,26 @@ module DTK::Arbiter
         # spin up the provider gRPC server
         set_grpc_port!(generate_grpc_port)
         Log.info("Generate port if this #{@debug_port_request}")
+        Log.info("$debug port init? #{$dtk_debug_port}")
         set_dtk_debug_port!(generate_debug_port) if $dtk_debug_port.nil?
 
         if @debug_port_request
+          $dtk_debug_port = @dtk_debug_port if $dtk_debug_port.nil?
           @dtk_debug_port = $dtk_debug_port if @dtk_debug_port.nil?
           debug_response = {}
           debug_response[:dynamic_attributes] = {:dtk_debug_port => @dtk_debug_port}
           debug_response[:success] = "true"
           response_hash =  ResponseHash.create_from_json(debug_response.to_json)
-          Log.info("Returning port is:#{@dtk_debug_port}")
+          Log.info("Returning port to server is:#{@dtk_debug_port}")
           Log.info("dtk_port without @: #{dtk_debug_port}")
           return response_hash.raw_hash_form
         end
         response_hash =
           if ephemeral?
-             Log.info("Ports are snet to container: #{@dtk_debug_port} and #{dtk_debug_port}")
-            $dtk_debug_port = @dtk_debug_port
+            Log.info("Ports are sent to container: #{@dtk_debug_port} and #{dtk_debug_port}")
+            @dtk_debug_port = $dtk_debug_port
+            dtk_debug_port  = $dtk_debug_port
+            Log.info("$dtk_debug is: #{$dtk_debug_port}")
             invoke_action_when_container
           else
             invoke_action_when_native_grpc_daemon
