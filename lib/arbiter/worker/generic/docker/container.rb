@@ -10,8 +10,7 @@ module DTK::Arbiter
 
       def self.stop_and_remove?(container_name)
         if container = get_container?(container_name)
-          container.stop if running?(container)
-          container.remove
+          container.delete(:force => true)
         end
       end
 
