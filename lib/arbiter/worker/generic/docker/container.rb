@@ -39,6 +39,7 @@ module DTK::Arbiter
       end
 
       def self.create_params_hash(container_name, docker_image, grpc_host, grpc_port, debug_port)
+        Log.info("Create params hash method: #{debug_port}")
         grpc_port = grpc_port.to_s
         {
           'Image'        => docker_image,
@@ -72,8 +73,11 @@ module DTK::Arbiter
       end
 
       def self.port_bindings(grpc_port, grpc_host, debug_port)
+        Log.info("Port bindings:")
         bindings = { INTERNAL_CONTAINER_GRPC_PORT => [{ 'HostPort' => grpc_port, 'HostIp' => grpc_host }] }
         debug_bindings = { "#{debug_port}/tcp" => [{ 'HostPort' => debug_port.to_s, 'HostIp' => '0.0.0.0' }] } if $breakpoint
+        Log.info("Debug bindings: #{$breakpoint}")
+        Log.info("Debug bindings: #{debug_bindings}")
         bindings.merge!(debug_bindings) if $breakpoint
         bindings
       end
