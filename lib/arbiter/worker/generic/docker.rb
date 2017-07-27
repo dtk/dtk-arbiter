@@ -53,10 +53,10 @@ module DTK::Arbiter
           rescue => e
             return [:failed, "Failed to remove existing docker container '#{container_name}' (#{e.message})"]
           end
-
+          Log.info("Container start: #{dtk_debug_port}")
           container = nil
           begin
-            Container.create_and_start(container_name, docker_image_tag, grpc_host, grpc_port)
+            Container.create_and_start(container_name, docker_image_tag, grpc_host, grpc_port, dtk_debug_port)
           rescue => e
             return [:failed, "Failed to create and start the docker container '#{container_name}' (#{e.message})"]
           end
