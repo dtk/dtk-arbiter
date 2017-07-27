@@ -32,7 +32,7 @@ module DTK
       end
       
       def unbind
-        Log.error "Connection to STOMP server #{Config.full_url} failed, reconnecting in #{Config.connect_time} seconds ..."
+        Log.info "Connection to STOMP server #{Config.full_url} is closed."
         
         @connect_retries ||= Config.connect_retries
         

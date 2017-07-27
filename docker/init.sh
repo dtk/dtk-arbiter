@@ -51,4 +51,4 @@ rm /tmp/ssh_host.tmp
 # make sure cron is running
 cron
 
-/opt/puppet-omnibus/embedded/bin/ruby start.rb --foreground
+exec /opt/puppet-omnibus/embedded/bin/ruby start.rb --foreground
