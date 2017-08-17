@@ -53,18 +53,20 @@ module DTK::Arbiter
         Log.info("Port request is: #{@debug_port_request}")
         Log.info("Current Debug port is: #{@dtk_debug_port}")
         @task_id                = get(:task_id)
-        @diff = false 
- 	      if $task_id.nil?
-          $task_id = @task_id
-          @diff = true
-        elsif $task_id != @task_id
-          $dtk_debug_port = nil
-          @diff = true
-          $task_id = @task_id
-	      elsif $task_id == @task_id
-          @diff = false
-        end
-	#$task_id = @task_id unless @task_id.nil?
+        @diff                   = false
+        # make new method which will handle this 
+        check_if_same_task_id
+        # if $task_id.nil?
+        #   $task_id = @task_id
+        #   @diff = true
+        # elsif $task_id != @task_id
+        #   $dtk_debug_port = nil
+        #   @diff = true
+        #   $task_id = @task_id
+	      # elsif $task_id == @task_id
+        #   @diff = false
+        # end
+	      #$task_id = @task_id unless @task_id.nil?
         # Make sure following is prepared
         FileUtils.mkdir_p(MODULE_DIR, mode: 0755) unless File.directory?(MODULE_DIR)
       end
@@ -155,7 +157,6 @@ module DTK::Arbiter
           set_dtk_debug_port!(generate_debug_port)
           Log.debug("gRPC port bafter generate: #{$dtk_debug_port}")
         else
-          #set_dtk_debug_port!($dtk_debug_port)
           Log.info("DEBUG: Different subtasks current port #{$dtk_debug_port}")
 	      end
         if @debug_port_request
@@ -200,7 +201,18 @@ module DTK::Arbiter
 
         converted_attributes.merge(merge_hash).to_json
       end
-
+      def check_if_same_task_id
+        if $task_id.nil?
+          $task_id = @task_id
+          @diff = true
+        elsif $task_id != @task_id
+          $dtk_debug_port = nil
+          @diff = true
+          $task_id = @task_id
+	      elsif $task_id == @task_id
+          @diff = false
+        end
+      end
       def grpc_host
         @grpc_host ||= arbiter_inside_docker? ? get_arbiter_primary_ip : '127.0.0.1'
       end
@@ -218,11 +230,12 @@ module DTK::Arbiter
       end
 
       def set_dtk_debug_port!(dtk_debug_port)
-        if $dtk_debug_port.nil?
-          $dtk_debug_port = dtk_debug_port
-        else
-          return dtk_debug_port
-        end
+        $dtk_debug_port = dtk_debug_port if $dtk_debug_port.nil?
+        # if $dtk_debug_port.nil?
+        #   $dtk_debug_port = dtk_debug_port
+        # else
+        #   return dtk_debug_port
+        # end
       end
 
       def grpc_address
