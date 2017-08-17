@@ -196,6 +196,9 @@ module DTK
             worker.notify_of_error(e.message, e.error_type)
           rescue Exception => e
             Log.fatal(e.message, e.backtrace)
+            # To remove cunning cointainer which cuased deadline error, idea is to use something like this:
+            # message = {:agent => 'cancel_action', :worker => 'generic', :task_id => $queue.first.first[0]}
+            # ::DTK::Arbiter::Worker::Generic.cancel_task(message)
             worker.notify_of_error(e.message, :internal)
           ensure
             # we unlock concurrency and trigger next puppet apply task
