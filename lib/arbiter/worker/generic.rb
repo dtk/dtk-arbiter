@@ -14,6 +14,7 @@ module DTK::Arbiter
 
       BASE_DTK_DIR          = '/usr/share/dtk'
       MODULE_DIR            = "#{BASE_DTK_DIR}/modules"
+      NUMBER_OF_RETRIES     = 5
 
       $queue = []
 
@@ -81,6 +82,21 @@ module DTK::Arbiter
         # run the provider
         dynamically_load_grpc # grpc must be dynamically loaded to avoid bug DTK-2956
         provider_run_response = invoke_action
+
+        begin
+          tries ||= NUMBER_OF_RETRIES
+          provider_run_response = invoke_action
+         rescue Exception => e
+          unless (tries -= 1).zero?
+            Log.info("Re-trying gRPC action because of error: #{e.message}, retries left: #{tries}")
+            sleep(1)
+            retry
+          end
+
+          # time to give up - sending error response
+          raise e
+        end
+
         notify(provider_run_response)
       end
 
