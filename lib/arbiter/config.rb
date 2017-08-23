@@ -6,16 +6,19 @@ module DTK
   module Arbiter
     class Config
 
+      require 'logger'
+
       DEFAULT_ARBITER_CFG    = '/etc/dtk/arbiter.cfg'
       DEFAULT_PULSE_INTERVAL = 300
       DEFAULT_CONNECT_RETRIES = 5
       DEFAULT_CONNECT_TIME = 5
+      DEFAULT_LOG_LEVEL = Logger::INFO
 
       include Singleton
 
       attr_accessor :stomp_url, :stomp_port, :stomp_username, :stomp_password,
                     :inbox_topic, :outbox_queue, :private_key, :git_server, :pbuilderid, :pulse_interval,
-                    :connect_retries, :connect_time, :git_pull_modules
+                    :connect_retries, :connect_time, :git_pull_modules, :log_level
 
       def initialize
         config = load_arbiter_configuration
@@ -35,6 +38,7 @@ module DTK
         @pulse_interval = retrieve_config('pulse_interval', config) || DEFAULT_PULSE_INTERVAL
         @connect_retries = retrieve_config('connect_retries', config) || DEFAULT_CONNECT_RETRIES
         @connect_time = retrieve_config('connect_time', config) || DEFAULT_CONNECT_TIME
+        @log_level = Logger.const_get(retrieve_config('log_level', config).upcase) rescue DEFAULT_LOG_LEVEL
       end
 
       def retrieve_config!(key, config)
@@ -102,6 +106,10 @@ module DTK
 
       def self.git_pull_modules
         instance.git_pull_modules
+      end
+
+      def self.log_level
+        instance.log_level
       end
 
     private

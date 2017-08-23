@@ -18,6 +18,7 @@ module DTK::Arbiter
 
     def initialize
       @logger = Logger.new(STDOUT)
+      @logger.level = Config.log_level
       @all_msgs   =[]
       @error_msgs =[]
 
