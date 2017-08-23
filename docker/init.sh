@@ -25,6 +25,12 @@ PRIVATE_KEY_NAME=${PRIVATE_KEY_NAME-arbiter_remote}
 STOMP_USERNAME=${STOMP_USERNAME-dtk1}
 STOMP_PASSWORD=${STOMP_PASSWORD-marionette}
 STOMP_PORT=${STOMP_PORT-6163}
+LOG_LEVEL=${LOG_LEVEL-info}
+
+if [[ "$DEVELOPMENT_MODE" -eq true ]]; then
+  /opt/puppet-omnibus/embedded/bin/bundle install --with development
+  LOG_LEVEL=debug
+fi
 
 if [[ "$SKIP_CONFIG" != true ]]; then
 cat << EOF > /etc/dtk/arbiter.cfg
@@ -37,6 +43,7 @@ arbiter_queue = /queue/arbiter.${STOMP_USERNAME}.reply
 git_server = "ssh://${GIT_USERNAME}@${PUBLIC_ADDRESS}:${GIT_PORT}"
 pbuilderid = ${PBUILDERID}
 private_key = /host_volume/arbiter/arbiter_remote
+log_level = ${LOG_LEVEL}
 EOF
 fi
 
