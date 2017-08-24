@@ -26,10 +26,12 @@ STOMP_USERNAME=${STOMP_USERNAME-dtk1}
 STOMP_PASSWORD=${STOMP_PASSWORD-marionette}
 STOMP_PORT=${STOMP_PORT-6163}
 LOG_LEVEL=${LOG_LEVEL-info}
+RUBY_EXECUTABLE=${RUBY_EXECUTABLE-ruby}
 
-if [[ "$DEVELOPMENT_MODE" -eq true ]]; then
+if [[ "$DEVELOPMENT_MODE" == true ]]; then
   /opt/puppet-omnibus/embedded/bin/bundle install --with development
   LOG_LEVEL=debug
+  RUBY_EXECUTABLE=byebug
 fi
 
 if [[ "$SKIP_CONFIG" != true ]]; then
@@ -58,4 +60,4 @@ rm /tmp/ssh_host.tmp
 # make sure cron is running
 cron
 
-exec /opt/puppet-omnibus/embedded/bin/ruby start.rb --foreground
+exec /opt/puppet-omnibus/embedded/bin/$RUBY_EXECUTABLE start.rb --foreground
