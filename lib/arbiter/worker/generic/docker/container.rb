@@ -9,6 +9,7 @@ module DTK::Arbiter
       end
 
       def self.stop_and_remove?(container_name)
+        require 'byebug'; debugger
         if container = get_container?(container_name)
           container.delete(:force => true)
         end
@@ -46,7 +47,8 @@ module DTK::Arbiter
           'Tty'          => true, # needed to run byebug when attach
           'OpenStdin'    => true, # needed to run byebug when attach
           'ExposedPorts' => exposed_ports(debug_port),
-          'HostConfig'   => host_config(grpc_port, grpc_host, debug_port)
+          'HostConfig'   => host_config(grpc_port, grpc_host, debug_port),
+          "Labels"       => { "dtk-provider" => "ephemeral" }
         }
       end  
 
