@@ -9,7 +9,6 @@ module DTK::Arbiter
       end
 
       def self.stop_and_remove?(container_name)
-        require 'byebug'; debugger
         if container = get_container?(container_name)
           container.delete(:force => true)
         end
