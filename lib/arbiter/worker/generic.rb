@@ -86,6 +86,7 @@ module DTK::Arbiter
         begin
           tries ||= NUMBER_OF_RETRIES
           provider_run_response = invoke_action
+          raise 'gRPC action failed' if provider_run_response['error'] == 'true'
          rescue Exception => e
           unless (tries -= 1).zero?
             Log.info("Re-trying gRPC action because of error: #{e.message}, retries left: #{tries}")
@@ -149,10 +150,10 @@ module DTK::Arbiter
         Log.info 'Starting generic worker run'
         # spin up the provider gRPC server
         set_grpc_port!(generate_grpc_port)
-        Log.info("DEBUG: Before generate: #{$dtk_debug_port}")
+        Log.debug("gRPC port before generate: #{$dtk_debug_port}")
         if @diff
           set_dtk_debug_port!(generate_debug_port)
-          Log.info("DEBUG: after generate: #{$dtk_debug_port}")
+          Log.debug("gRPC port bafter generate: #{$dtk_debug_port}")
         else
           #set_dtk_debug_port!($dtk_debug_port)
           Log.info("DEBUG: Different subtasks current port #{$dtk_debug_port}")
