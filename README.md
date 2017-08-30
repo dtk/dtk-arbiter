@@ -1,7 +1,7 @@
-### Welcome to Dtk Arbiter
+### Dtk Arbiter
 
 
-###### Description
+##### Description
 
 Dtk Arbiter is ruby process which uses EventMachine for continus running. It can be run either in foreground or using the provided init scripts.
 
@@ -9,7 +9,7 @@ Dtk Arbiter is small process meant to be distributed on remote nodes to provide 
 
 ##### Requirements
 
-* Ruby 1.9.3+
+* Ruby 2.0.0+
 * Unix
 
 ###### Ruby
@@ -25,6 +25,11 @@ Make sure that Bundler gem is installed.
 After cloning project from github make sure you run following command
 
     bundle install
+
+##### Configuration
+Arbiter will look for a configuration located at `/etc/dtk/arbiter.cfg`. Example of the config file: [arbiter.cfg.example](etc/arbiter.cfg.example)
+
+####Development
 
 ##### Environment
 
@@ -47,11 +52,27 @@ From dtk-arbiter folder run command:
 
     ruby start.rb [--development]
 
-### Calls from dtk client
+#### Docker
+Arbiter can also be started as a docker container: 
 
-From `dtk:/developer>` you can run:
+    docker run --name dtk-arbiter \
+               -v /usr/share/dtk:/host_volume \ 
+               -v /var/run/docker.sock:/var/run/docker.sock \
+               -e HOST_VOLUME=/usr/share/dtk/ \
+               -td getdtk/dtk-arbiter
 
-    run-agent dock-test system_agent "{'module_name':'r8::stdlib','action_name':'get_ps','top_task_id':100000001,'task_id':100000002 }"
-    run-agent dock-test action_agent "{'module_name':'r8::stdlib','action_name':'create','top_task_id':100000001,'task_id':100000002,'execution_list':[{'type':'syscall','command':'sleep 10; echo foo;','timeout':0,'stdout_redirect':true}]}"
+Full list of environment variables that can be passed to the arbiter container:
+
+	STOMP_USERNAME
+	STOMP_PASSWORD
+	STOMP_PORT
+    GIT_PORT
+	GIT_USERNAME
+	PBUILDERID
+	PRIVATE_KEY_NAME
+	LOG_LEVEL
+	DEVELOPMENT_MODE
+
+
 
 

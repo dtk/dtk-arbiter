@@ -1,5 +1,0 @@
-stomp_url = hostname
-stomp_port = 6163
-stomp_username = mcollective
-stomp_password = password
-arbiter_topic = arbiter

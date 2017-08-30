@@ -1,0 +1,11 @@
+stomp_url = hostname
+stomp_port = 6163
+stomp_username = mcollective
+stomp_password = password
+arbiter_topic = /topic/arbiter
+arbiter_queue = /queue/arbiter
+git_server = "ssh://localhost:2222"
+pbuilderid = 
+private_key = /etc/dtk/ssh/arbiter
+git_pull_modules = true
+log_level = info
