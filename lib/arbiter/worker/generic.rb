@@ -81,7 +81,7 @@ module DTK::Arbiter
 
         # run the provider
         dynamically_load_grpc # grpc must be dynamically loaded to avoid bug DTK-2956
-        provider_run_response = invoke_action
+        provider_run_response = nil
 
         begin
           tries ||= NUMBER_OF_RETRIES
