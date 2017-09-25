@@ -164,7 +164,6 @@ module DTK
           return
         end
 
-          
         ##
         # If there is puppet apply running than queue this execution, else just run concurrentl
         #
