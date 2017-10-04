@@ -23,7 +23,7 @@ module DTK::Arbiter
       #   :error_msg
       def self.error(opts = {})
         ret = new(ERROR_KEY => ERROR_VALUE)
-        ret.merge!(ERROR_MSG_KEY => opts[:error_msg]) if  opts[:error_msg]
+        ret.merge!(ERROR_MSG_KEY => opts[:error_msg]) if opts[:error_msg]
         ret
       end
       def has_error?
