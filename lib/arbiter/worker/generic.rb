@@ -14,8 +14,8 @@ module DTK::Arbiter
 
       BASE_DTK_DIR          = '/usr/share/dtk'
       MODULE_DIR            = "#{BASE_DTK_DIR}/modules"
-      NUMBER_OF_RETRIES     = 5
-
+      MAX_NUMBER_OF_RETRIES = 3
+      SLEEP_BETWEEN_RETRIES = 2 # in seconds
       $queue = []
 
       Docker::GarbageCollection.run_garbage_collection
@@ -54,43 +54,43 @@ module DTK::Arbiter
         Log.info("Current Debug port is: #{@dtk_debug_port}")
         @task_id                = get(:task_id)
         @diff = false 
- 	      if $task_id.nil?
+        if $task_id.nil?
           $task_id = @task_id
           @diff = true
         elsif $task_id != @task_id
           $dtk_debug_port = nil
           @diff = true
           $task_id = @task_id
-	      elsif $task_id == @task_id
+        elsif $task_id == @task_id
           @diff = false
         end
 	#$task_id = @task_id unless @task_id.nil?
         # Make sure following is prepared
         FileUtils.mkdir_p(MODULE_DIR, mode: 0755) unless File.directory?(MODULE_DIR)
       end
-
+      
       private :initialize
-
+      
       def process
         # we need this to pull our modules
         git_server = Config.git_server
-
+        
         # pulling modules and preparing environment for changes
         Log.info 'Pulling modules from DTK'
         response = Utils::Git.pull_modules(get(:modules), git_server)
-
+        
         # run the provider
         dynamically_load_grpc # grpc must be dynamically loaded to avoid bug DTK-2956
-        provider_run_response = nil
 
+        provider_run_response = nil
+        tries = max_number_of_retries 
         begin
-          tries ||= NUMBER_OF_RETRIES
           provider_run_response = invoke_action
           raise 'gRPC action failed' if provider_run_response['error'] == 'true'
          rescue Exception => e
-          unless (tries -= 1).zero?
+          if (tries -= 1) > 0
             Log.info("Re-trying gRPC action because of error: #{e.message}, retries left: #{tries}")
-            sleep(1)
+            sleep(SLEEP_BETWEEN_RETRIES)
             retry
           end
 
@@ -135,6 +135,14 @@ module DTK::Arbiter
       private
 
       attr_reader :provider_entrypoint, :task_id
+
+      def max_number_of_retries 
+        if @debug_port_request or $breakpoint
+          1
+        else
+          MAX_NUMBER_OF_RETRIES
+        end
+      end
 
       def dynamically_load_grpc
         self.class.dynamically_load_grpc
