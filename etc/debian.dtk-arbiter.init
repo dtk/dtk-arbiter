@@ -1,8 +1,7 @@
 #! /bin/sh
 ### BEGIN INIT INFO
 # Provides:          dtk-arbiter
-# Required-Start:    $remote_fs $syslog
-# Required-Stop:     $remote_fs $syslog
+# Required-Start:    $network
 # Default-Start:     3 4 5
 # Default-Stop:      0 1 6
 # Short-Description: DTK Arbiter initscript
