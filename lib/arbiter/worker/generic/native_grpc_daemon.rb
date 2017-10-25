@@ -10,7 +10,7 @@ module DTK::Arbiter
         #returns ResponseHash
         def invoke_action_when_native_grpc_daemon
           # run the bash script received in the message
-          return ResponseHash.error(error_msg: "Failed to execute provider bash script. Please check dtk-arbiter log for more details.") unless execute_bash(@bash_script)
+          return ResponseHash.error(error_msg: provider_error_message) unless execute_bash(@bash_script)
           # spin up the gRPC daemon on the OS
           daemon_process_id, error_msg = start_grpc_daemon_with_retries(provider_entrypoint, grpc_port, grpc_address, grpc_host, task_id)
           unless daemon_process_id
@@ -24,7 +24,14 @@ module DTK::Arbiter
           end
         end
 
-      
+        def provider_error_message
+          case @provider_type
+          when 'ruby'
+            'An error was encountered while installing gem dependencies. Please check dtk-arbiter log for more details.'
+          else
+            "Failed to execute #{@provider_type} provider dependencies. Please check dtk-arbiter log for more details."
+          end
+        end  
       
       NUMBER_OF_RETRIES  = 10
       TIME_BETWEEN_RETRY = 1
