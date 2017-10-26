@@ -16,6 +16,7 @@ module DTK::Arbiter
       PUPPET_LOG_TASK     = "/usr/share/dtk/tasks/"
       WAIT_PS_END         = 10
       YUM_LOCK_FILE       = "/var/run/yum.pid"
+      APT_LOCK_FILE       = ["/var/lib/dpkg/lock", "/var/cache/apt/archives/lock"]
       YUM_LOCK_RETRIES    = 1
 
       include CommonMixin::Open3
@@ -96,16 +97,16 @@ module DTK::Arbiter
 
               unless exitstatus == 0
                 # we check if there is yum lock
-                if yum_lock_retries != 0 && (stderr||'').include?(YUM_LOCK_FILE)
-                  raise YumLock, "Yum lock has been detected!"
+                if yum_lock_retries != 0 && ((stderr||'').include?(YUM_LOCK_FILE) || APT_LOCK_FILE.any? { |file| (stderr||'').include? file })
+                  raise YumLock, "Yum or Apt lock has been detected!"
                 end
 
                 raise ActionAbort, "Not able to execute puppet code, exitstatus: #{exitstatus}, error: #{stderr}"
               end
             rescue YumLock => e
               # we wait for YUM process to finish and than we try again
-              Log.warn("YUM Lock has been detected, initiating wait sequence for running YUM process.")
-              wait_for_yum_lock_release
+              Log.warn("yum or apt lock has been detected, initiating wait sequence for the running process.")
+              File.exists?(YUM_LOCK_FILE) ? wait_for_yum_lock_release : wait_for_apt_lock_release
               yum_lock_retries -= 1
               retry
             end
@@ -183,12 +184,21 @@ module DTK::Arbiter
           pid = File.read(YUM_LOCK_FILE)
           pid = (pid||'').strip.to_i
 
-          Log.info("Puppet execution is waiting for YUM process (#{pid}) to finish")
+          Log.info("Puppet execution is waiting for #{YUM_LOCK_FILE} to be unlocked by process #{pid}.")
           while process_exists?(pid) do
             sleep(WAIT_PS_END)
           end
-          Log.info("Puppet execution is retrying last action, since YUM processed finished")
+          Log.info("Puppet execution is retrying last action, since processes finished")
         end
+      end
+
+      def wait_for_apt_lock_release
+          Log.info("Puppet execution is waiting for #{APT_LOCK_FILE} to be unlocked.")
+          while system("ps aux | grep [a]pt > /dev/null") do
+            sleep(WAIT_PS_END)
+          end
+          Log.info("Puppet execution is retrying last action, since processes finished")
+        
       end
 
       def log_processes_to_file
@@ -314,3 +324,4 @@ module DTK::Arbiter
     end
   end
 end
+

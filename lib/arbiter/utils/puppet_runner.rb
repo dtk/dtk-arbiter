@@ -16,7 +16,7 @@ module DTK::Arbiter
         exitstatus = status.exitstatus
 
         # we extract, puppet lines with error
-        error_lines = stdout.split("\n").select { |line| line.match(/Error:/)}
+        error_lines = stdout.split("\n").select { |line| line.match(/Error:|lock/)}
 
         # we make sure that error lines are here, and that exitstatus matches this scenario
         unless error_lines.empty?
