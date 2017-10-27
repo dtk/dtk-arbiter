@@ -15,7 +15,7 @@ module DTK::Arbiter
       BASE_DTK_DIR          = '/usr/share/dtk'
       MODULE_DIR            = "#{BASE_DTK_DIR}/modules"
       MAX_NUMBER_OF_RETRIES = 3
-      SLEEP_BETWEEN_RETRIES = 2 # in seconds
+      SLEEP_BETWEEN_RETRIES = 10 # in seconds, temporary test
       $queue = []
 
       Docker::GarbageCollection.run_garbage_collection
