@@ -1,6 +1,6 @@
 [Unit]
 Description=dtk-arbiter
-After=network.target cloud-init-local.service cloud-init.service
+After=network.target cloud-init-local.service cloud-init.service cloud-config.target
 
 [Service]
 Type=forking
