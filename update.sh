@@ -7,8 +7,15 @@
 base_dir="$( cd -P "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 # make sure puppet-omnibus is first in path
 export PATH=/opt/puppet-omnibus/embedded/bin/:${PATH}
+arbiter_cfg='/etc/dtk/arbiter.cfg'
 # default branch to stable
 branch=${1:-stable}
+
+# try to pick up the arbiter branch from arbiter.cfg
+if [[ -s $arbiter_cfg ]] && [[ -z "$1" ]]; then
+  branch_cfg=$(grep '^arbiter_branch' /etc/dtk/arbiter.cfg | cut -d= -f2 | tr -d ' ')
+fi
+[[ -n "$branch_cfg" ]] && branch=$branch_cfg
 
 cd ${base_dir}
 git fetch
