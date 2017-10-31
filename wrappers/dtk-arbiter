@@ -3,4 +3,11 @@
 wrapper_dir = File.expand_path(File.join(File.dirname(__FILE__), '..'))
 Dir.chdir wrapper_dir
 
+# run the update script
+# unless running inside docker or already updated
+update_check_file = '/usr/share/dtk/.arbiter-update'
+unless File.exist?('/.dockerenv') || File.exist?(update_check_file)
+  File.write(update_check_file, '') if system('./update.sh')
+end
+
 require_relative "#{wrapper_dir}/start.rb"
