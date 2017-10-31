@@ -12,7 +12,8 @@ arbiter_cfg='/etc/dtk/arbiter.cfg'
 branch=${1:-stable}
 
 # try to pick up the arbiter branch from arbiter.cfg
-if [[ -s $arbiter_cfg ]] && [[ -z "$1" ]]; then
+arbiter_update=$(grep '^arbiter_update' /etc/dtk/arbiter.cfg | cut -d= -f2 | tr -d ' ')
+if [[ -s $arbiter_cfg ]] && [[ -z "$1" ]] && [[ "$arbiter_update" == 'true' ]]; then
   branch_cfg=$(grep '^arbiter_branch' /etc/dtk/arbiter.cfg | cut -d= -f2 | tr -d ' ')
 fi
 [[ -n "$branch_cfg" ]] && branch=$branch_cfg
