@@ -16,7 +16,7 @@ module DTK::Arbiter
       PUPPET_LOG_TASK     = "/usr/share/dtk/tasks/"
       WAIT_PS_END         = 10
       YUM_LOCK_FILE       = "/var/run/yum.pid"
-      APT_LOCK_FILE       = ["/var/lib/dpkg/lock", "/var/cache/apt/archives/lock"]
+      APT_LOCK_PATTERN       = ["/var/lib/dpkg/lock", "/var/cache/apt/archives/lock", "dpkg status database is locked"]
       YUM_LOCK_RETRIES    = 1
 
       include CommonMixin::Open3
@@ -97,7 +97,7 @@ module DTK::Arbiter
 
               unless exitstatus == 0
                 # we check if there is yum lock
-                if yum_lock_retries != 0 && ((stderr||'').include?(YUM_LOCK_FILE) || APT_LOCK_FILE.any? { |file| (stderr||'').include? file })
+                if yum_lock_retries != 0 && ((stderr||'').include?(YUM_LOCK_FILE) || APT_LOCK_PATTERN.any? { |file| (stderr||'').include? file })
                   raise YumLock, "Yum or Apt lock has been detected!"
                 end
 
@@ -193,7 +193,7 @@ module DTK::Arbiter
       end
 
       def wait_for_apt_lock_release
-          Log.info("Puppet execution is waiting for #{APT_LOCK_FILE} to be unlocked.")
+          Log.info("Puppet execution is waiting for apt lock to be unlocked.")
           while system("ps aux | grep [a]pt > /dev/null") do
             sleep(WAIT_PS_END)
           end
