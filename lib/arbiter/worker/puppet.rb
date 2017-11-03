@@ -16,7 +16,7 @@ module DTK::Arbiter
       PUPPET_LOG_TASK     = "/usr/share/dtk/tasks/"
       WAIT_PS_END         = 10
       YUM_LOCK_FILE       = "/var/run/yum.pid"
-      APT_LOCK_PATTERN       = ["/var/lib/dpkg/lock", "/var/cache/apt/archives/lock", "dpkg status database is locked"]
+      APT_LOCK_PATTERN       = ["/var/lib/dpkg/lock", "/var/cache/apt/archives/lock", "/var/lib/apt/lists/lock", "dpkg status database is locked"]
       YUM_LOCK_RETRIES    = 1
 
       include CommonMixin::Open3
