@@ -49,6 +49,7 @@ module DTK
       end
       
       def receive_msg msg
+        Log.debug "Received STOMP message with a header: #{msg.header}"
         if "CONNECTED".eql?(msg.command)
           # success connecting to stomp
           subscribe(Config.inbox_topic)
@@ -116,7 +117,7 @@ module DTK
         return
       end
       
-        Log.debug("Sending reply to '#{Config.outbox_queue}': #{message}")
+        Log.info("Sending reply to '#{Config.outbox_queue}': #{message}")
         send(Config.outbox_queue, encoded_message)
       end
       
