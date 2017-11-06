@@ -31,7 +31,10 @@ module DTK::Arbiter
         end
       end
 
-      def self.pull_modules(modules,git_server,symlink_location = nil)
+      def self.pull_modules(modules,git_server,opts = {})
+        clone_location = opts[:clone_location] || DTK_MODULE_PATH
+        symlink_location = opts[:symlink_location] || nil
+
         unless Config.git_pull_modules
           Log.info("Skipping module pull since 'git_pull_modules' is set to false in arbiter.cfg")
           return true
@@ -49,10 +52,10 @@ module DTK::Arbiter
               end
             end
 
-            FileUtils.mkdir_p(DTK_MODULE_PATH) unless File.directory?(DTK_MODULE_PATH)
+            FileUtils.mkdir_p(clone_location) unless File.directory?(clone_location)
 
             module_name     = k.to_s
-            module_repo_dir = "#{DTK_MODULE_PATH}/#{module_name}"
+            module_repo_dir = "#{clone_location}/#{module_name}"
             repo_dir        = "#{symlink_location}/#{module_name}"
             remote_repo     = git_repo_full_url(git_server, v[:repo])
 
@@ -89,7 +92,7 @@ module DTK::Arbiter
             end
 
             # symlink the module to designated location  
-            FileUtils.ln_sf("#{DTK_MODULE_PATH}/#{module_name}", repo_dir) if symlink_location
+            FileUtils.ln_sf("#{clone_location}/#{module_name}", repo_dir) if symlink_location
           end
          ensure
           # this is due to GIT custom againt we are using

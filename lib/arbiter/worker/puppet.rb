@@ -10,12 +10,13 @@ module DTK::Arbiter
       UNKNOWN_SERVICE = 'UNKNOWN'
       NUMBER_OF_RETRIES = 5
 
-      PUPPET_LOG_DIR      = "/var/log/puppet"
-      PUPPET_MODULE_PATH  = "/etc/puppet/modules"
-      MODULE_PATH         = "/usr/share/dtk/modules"
-      PUPPET_LOG_TASK     = "/usr/share/dtk/tasks/"
+      PUPPET_LOG_DIR      = '/var/log/puppet'
+      PUPPET_MODULE_PATH  = '/etc/puppet/modules'
+      MODULE_PATH         = '/usr/share/dtk/modules'
+      SYMLINK_MODULES     = ['dtk', 'r8']
+      PUPPET_LOG_TASK     = '/usr/share/dtk/tasks/'
       WAIT_PS_END         = 10
-      YUM_LOCK_FILE       = "/var/run/yum.pid"
+      YUM_LOCK_FILE       = '/var/run/yum.pid'
       APT_LOCK_PATTERN       = ["/var/lib/dpkg/lock", "/var/cache/apt/archives/lock", "/var/lib/apt/lists/lock", "dpkg status database is locked"]
       YUM_LOCK_RETRIES    = 1
 
@@ -27,13 +28,19 @@ module DTK::Arbiter
 
         @service_name    = get(:service_name) || UNKNOWN_SERVICE
         @version_context = get(:version_context)
+        @module_path_service = "#{MODULE_PATH}/#{@service_name}"
 
         # Make sure this property is set
         ENV['LC_ALL'] = "en_US.UTF-8"
 
         # Make sure following is prepared
-        FileUtils.mkdir_p(MODULE_PATH, mode: 0755) unless File.directory?(MODULE_PATH)
-        FileUtils.mkdir_p(PUPPET_LOG_TASK, mode: 0755)    unless File.directory?(PUPPET_LOG_TASK)
+        FileUtils.mkdir_p(@module_path_service, mode: 0755) unless File.directory?(@module_path_service)
+        FileUtils.mkdir_p(PUPPET_LOG_TASK, mode: 0755) unless File.directory?(PUPPET_LOG_TASK)
+        SYMLINK_MODULES.each do |module|
+          module_path = "#{MODULE_PATH}/#{module}"
+          module_target = "#{module_path_service}/#{module}"
+          File.ln_s(module_path, module_target) unless File.exists?(module_target)
+        end
       end
       private :initialize
 
@@ -43,7 +50,8 @@ module DTK::Arbiter
 
         # pulling modules and preparing environment for changes
         Log.info 'Pulling modules from DTK'
-        response = Utils::Git.pull_modules(get(:version_context), git_server, PUPPET_MODULE_PATH)
+        opts = {symlink_location: PUPPET_MODULE_PATH, clone_location: @module_path_service }
+        response = Utils::Git.pull_modules(get(:version_context), git_server, opts)
 
         # finally run puppet execution
         puppet_run_response = run
@@ -88,7 +96,7 @@ module DTK::Arbiter
             temp_run_file.close
 
 
-            command_string = "#{cmd} apply #{temp_run_file.path} --debug --modulepath #{MODULE_PATH}"
+            command_string = "#{cmd} apply #{temp_run_file.path} --debug --modulepath #{@module_path_service}"
 
             yum_lock_retries = YUM_LOCK_RETRIES
 
