@@ -36,10 +36,10 @@ module DTK::Arbiter
         # Make sure following is prepared
         FileUtils.mkdir_p(@module_path_service, mode: 0755) unless File.directory?(@module_path_service)
         FileUtils.mkdir_p(PUPPET_LOG_TASK, mode: 0755) unless File.directory?(PUPPET_LOG_TASK)
-        SYMLINK_MODULES.each do |module|
-          module_path = "#{MODULE_PATH}/#{module}"
-          module_target = "#{module_path_service}/#{module}"
-          File.ln_s(module_path, module_target) unless File.exists?(module_target)
+        SYMLINK_MODULES.each do |m|
+          module_path = "#{MODULE_PATH}/#{m}"
+          module_target = "#{@module_path_service}/#{m}"
+          FileUtils.ln_s(module_path, module_target) unless File.exists?(module_target)
         end
       end
       private :initialize
