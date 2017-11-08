@@ -250,7 +250,8 @@ module DTK::Arbiter
       # returns response_hash
       def grpc_call_to_invoke_action
         # send a message to the gRPC provider server/daemon
-        stub = GrpcHelper.arbiter_service_stub(grpc_address, :this_channel_is_insecure, :timeout => 240)
+        timeout = $breakpoint ? { :timeout => 1800 } : { :timeout => 240 }
+        stub = GrpcHelper.arbiter_service_stub(grpc_address, :this_channel_is_insecure, timeout)
 
         provider_opts = {:component_name => @component_name,
                          :module_name => @module_name,
