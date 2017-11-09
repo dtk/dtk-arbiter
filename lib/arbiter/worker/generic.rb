@@ -40,10 +40,11 @@ module DTK::Arbiter
 
         @modules                = get(:modules)
         @execution_type         = get(:execution_environment)[:type]
-        @dockerfile             = get(:execution_environment)[:docker_file]
+        @dockerfile             = generate_dockerfile
         @bash_script            = get(:execution_environment)[:bash]
         @provider_name_internal = "#{@provider_type}-provider"
-        @provider_entrypoint    = "#{MODULE_DIR}/#{@provider_name_internal}/init"
+        @module_path_service    = "#{MODULE_DIR}/#{@service_instance}"
+        @provider_entrypoint    = "#{@module_path_service}/#{@provider_name_internal}/init"
         $breakpoint             = message_content[:breakpoint]
         @debug_port_request     = message_content[:debug_port_request]
         @debug_port_received    = message_content[:debug_port_received]
@@ -53,7 +54,7 @@ module DTK::Arbiter
         Log.info("Port request is: #{@debug_port_request}")
         Log.info("Current Debug port is: #{@dtk_debug_port}")
         @task_id                = get(:task_id)
-        @diff = false 
+        @diff = false
         if $task_id.nil?
           $task_id = @task_id
           @diff = true
@@ -64,26 +65,26 @@ module DTK::Arbiter
         elsif $task_id == @task_id
           @diff = false
         end
-	#$task_id = @task_id unless @task_id.nil?
         # Make sure following is prepared
-        FileUtils.mkdir_p(MODULE_DIR, mode: 0755) unless File.directory?(MODULE_DIR)
+        FileUtils.mkdir_p(@module_path_service, mode: 0755) unless File.directory?(@module_path_service)
       end
-      
+
       private :initialize
-      
+
       def process
         # we need this to pull our modules
         git_server = Config.git_server
-        
+
         # pulling modules and preparing environment for changes
         Log.info 'Pulling modules from DTK'
-        response = Utils::Git.pull_modules(get(:modules), git_server)
-        
+        opts = {clone_location: @module_path_service}
+        response = Utils::Git.pull_modules(get(:modules), git_server, opts)
+
         # run the provider
         dynamically_load_grpc # grpc must be dynamically loaded to avoid bug DTK-2956
 
         provider_run_response = nil
-        tries = max_number_of_retries 
+        tries = max_number_of_retries
         begin
           provider_run_response = invoke_action
           raise 'gRPC action failed' if provider_run_response['error'] == 'true'
@@ -123,20 +124,11 @@ module DTK::Arbiter
         end
       end
 
-
-      #  def self.debug_message(message)
-      #   if message[:breakpoint] && message[:worker] == 'generic'
-      #     return
-      #   else
-      #     notify_of_error("Unrecognized process type in cancel task.", :abort_action)
-      #   end
-      #  end
-
       private
 
       attr_reader :provider_entrypoint, :task_id
 
-      def max_number_of_retries 
+      def max_number_of_retries
         if @debug_port_request or $breakpoint
           1
         else
@@ -165,7 +157,7 @@ module DTK::Arbiter
         else
           #set_dtk_debug_port!($dtk_debug_port)
           Log.info("DEBUG: Different subtasks current port #{$dtk_debug_port}")
-	      end
+        end
         if @debug_port_request
           debug_response = {}
           debug_response[:dynamic_attributes] = {:dtk_debug_port => $dtk_debug_port}
@@ -263,6 +255,7 @@ module DTK::Arbiter
                            @protocol_version) #provider_message_hash.to_json
 
         Log.info "Sending a message to the gRPC daemon at #{grpc_address}"
+        Log.debug "Message: #{provider_message}"
         Log.info "Checking to see if grpc port is open:"
         port_check = port_open?(grpc_host, grpc_port)
         Log.info "#{port_check}"
@@ -315,6 +308,12 @@ module DTK::Arbiter
         end
       rescue ::Timeout::Error
         false
+      end
+
+      def generate_dockerfile
+        dockerfile = get(:execution_environment)[:docker_file]
+        dockerfile.gsub!('ENTRYPOINT "/usr/share/dtk/modules', 'ENTRYPOINT "/usr/share/dtk/modules/' + @service_instance)
+        dockerfile
       end
 
     end
