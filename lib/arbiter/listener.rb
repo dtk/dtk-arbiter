@@ -196,6 +196,7 @@ module DTK
           rescue ArbiterError => e
             worker.notify_of_error(e.message, e.error_type)
           rescue Exception => e
+            remove_container if e.message.include?("Deadline Exceeded")
             Log.fatal(e.message, e.backtrace)
             worker.notify_of_error(e.message, :internal)
           ensure
@@ -217,6 +218,12 @@ module DTK
         end)
       end
       
+      def remove_container        
+        container_name = ""
+        $queue.each { |q| container_name = q[$task_id] if q.key?($task_id) } 
+        DTK::Arbiter::Worker::Generic::Docker::Container.stop_and_remove?(container_name)
+      end
+
       ##
       # This message parses out result to add to body more error info, to be in line with our legacy code on server
       #
