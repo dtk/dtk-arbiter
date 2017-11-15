@@ -198,7 +198,7 @@ module DTK::Arbiter
       def generate_provider_message(attributes, merge_hash, protocol_version)
         converted_attributes =
           case protocol_version
-          when 1
+          when 1, 2
             attributes.inject({}) do |h, (type, attributes_with_metadata)|
             h.merge(type => ConvertToRubyDataype.convert_attributes(attributes_with_metadata))
           end
@@ -255,7 +255,8 @@ module DTK::Arbiter
 
         provider_opts = {:component_name => @component_name,
                          :module_name => @module_name,
-                         :breakpoint => $breakpoint}
+                         :breakpoint => $breakpoint,
+                         :protocol_version => @protocol_version}
         provider_opts.merge!(:dtk_debug_port => dtk_debug_port, :dtk_debug => $breakpoint) if $breakpoint
 
         provider_message = generate_provider_message(
