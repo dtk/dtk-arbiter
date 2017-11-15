@@ -6,11 +6,24 @@ module DTK::Arbiter
       require_relative('action/position')
       require_relative('action/commander')
 
+      BASE_DTK_DIR          = '/usr/share/dtk'
+      MODULE_DIR            = "#{BASE_DTK_DIR}/modules"
+
       def initialize(message_content, listener)
         super(message_content, listener)
 
         @process_pool = []
         @execution_list = @received_message[:execution_list] || []
+        @service_name = @received_message[:service_name]
+        @module_name_base = @received_message[:module_name].split(':')[1]
+
+        # replace references to obsolete module paths in commands
+        unadjusted_path = "#{MODULE_DIR}/#{@module_name_base}/"
+        adjusted_path = "#{MODULE_DIR}/#{@service_name}/#{@module_name_base}/"
+        @execution_list.each do |e|
+          e[:command].gsub!(unadjusted_path, adjusted_path)
+        end
+
         @commander = Commander.new(@execution_list)
       end
       private :initialize
