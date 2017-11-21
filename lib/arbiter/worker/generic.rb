@@ -14,8 +14,6 @@ module DTK::Arbiter
 
       BASE_DTK_DIR          = '/usr/share/dtk'
       MODULE_DIR            = "#{BASE_DTK_DIR}/modules"
-      MAX_NUMBER_OF_RETRIES = 3
-      SLEEP_BETWEEN_RETRIES = 10 # in seconds, temporary test
       $queue = []
 
       Docker::GarbageCollection.run_garbage_collection
@@ -44,6 +42,8 @@ module DTK::Arbiter
         @bash_script            = get(:execution_environment)[:bash]
         @provider_name_internal = "#{@provider_type}-provider"
         @provider_entrypoint    = "#{MODULE_DIR}/#{@provider_name_internal}/init"
+        @failure_attempts       = get(:failure_attempts) || Config::DEFAULT_FAILURE_ATTEMPTS
+        @failure_sleep          = get(:failure_sleep) || Config::DEFAULT_FAILURE_SLEEP
         $breakpoint             = message_content[:breakpoint]
         @debug_port_request     = message_content[:debug_port_request]
         @debug_port_received    = message_content[:debug_port_received]
@@ -84,13 +84,14 @@ module DTK::Arbiter
 
         provider_run_response = nil
         tries = max_number_of_retries 
+        sleep_between_retries = @failure_sleep
         begin
           provider_run_response = invoke_action
           raise 'gRPC action failed' if provider_run_response['error'] == 'true'
          rescue Exception => e
           if (tries -= 1) > 0
             Log.info("Re-trying gRPC action because of error: #{e.message}, retries left: #{tries}")
-            sleep(SLEEP_BETWEEN_RETRIES)
+            sleep(sleep_between_retries)
             retry
           end
 
@@ -140,7 +141,7 @@ module DTK::Arbiter
         if @debug_port_request or $breakpoint
           1
         else
-          MAX_NUMBER_OF_RETRIES
+          @failure_attempts
         end
       end
 
