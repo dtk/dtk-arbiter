@@ -13,6 +13,8 @@ module DTK
       DEFAULT_CONNECT_RETRIES = 5
       DEFAULT_CONNECT_TIME = 5
       DEFAULT_LOG_LEVEL = Logger::INFO
+      DEFAULT_FAILURE_ATTEMPTS = 3
+      DEFAULT_FAILURE_SLEEP = 10
 
       include Singleton
 
