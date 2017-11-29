@@ -36,7 +36,7 @@ module DTK::Arbiter
         begin
           @commander.run
           results = @commander.results
-          raise ActionAbort, "Not able to execute bash action, exitstatus: #{exitstatus}, error: #{stderr}" if are_there_errors_in_results?(results)
+          raise ActionAbort, "Not able to execute bash action, exitstatus: '#{results.first[:status]}', error: '#{results.first[:stderr]}'" if are_there_errors_in_results?(results)
 
         rescue Exception => e
           if (tries -= 1) > 0
