@@ -90,11 +90,10 @@ module DTK::Arbiter
           raise 'gRPC action failed' if provider_run_response['error'] == 'true'
          rescue Exception => e
           if (tries -= 1) > 0
-            Log.info("Re-trying gRPC action because of error: #{e.message}, retries left: #{tries}")
+            Log.warn("Re-trying gRPC action because of error: #{e.message}, retries left: #{tries}")
             sleep(sleep_between_retries)
             retry
           end
-
           # time to give up - sending error response
           raise e
         end
