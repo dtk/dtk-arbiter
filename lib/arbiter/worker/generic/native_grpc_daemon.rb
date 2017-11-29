@@ -38,27 +38,38 @@ module DTK::Arbiter
     
       # returns daemon_process_id or [nil, error_msg]
       def start_grpc_daemon_with_retries(provider_entrypoint, grpc_port, grpc_address, grpc_host, task_id)
-        tries ||= NUMBER_OF_RETRIES
+        port_tries ||= NUMBER_OF_RETRIES
+        tries = @failure_attempts
+        sleep_between_retries = @failure_sleep
         status = :failed
         error_msg = [nil, "Failed to start gRPC daemon natively on #{grpc_address}"]
-        until (tries -= 1).zero?
-          if daemon_process_id = start_grpc_daemon?(provider_entrypoint, grpc_port, task_id)
-            Log.info "Started gRPC daemon natively on #{grpc_address}"
-            tries ||= NUMBER_OF_RETRIES
-            until (tries -= 1).zero?
+
+        begin
+          until (port_tries -= 1).zero?
+            if daemon_process_id = start_grpc_daemon?(provider_entrypoint, grpc_port, task_id)
+              Log.info "Started gRPC daemon natively on #{grpc_address}"
+              port_tries ||= NUMBER_OF_RETRIES
+              until (port_tries -= 1).zero?
+                sleep TIME_BETWEEN_RETRY
+                break if port_open?(grpc_host, grpc_port)
+              end
+              unless port_open?(grpc_host, grpc_port)
+                stop_grpc_daemon(daemon_process_id, task_id)
+                raise ActionAbort, error_msg[1]
+              end
+              return daemon_process_id
+            else
               sleep TIME_BETWEEN_RETRY
-              break if port_open?(grpc_host, grpc_port)
             end
-            unless port_open?(grpc_host, grpc_port)
-              stop_grpc_daemon(daemon_process_id, task_id)
-              return error_msg
-            end
-            return daemon_process_id
-          else
-            sleep TIME_BETWEEN_RETRY
           end
+        rescue ActionAbort => e
+          if (tries -= 1) > 0
+            Log.warn("Re-trying gRPC daemon native start because of error: #{e.message}, retries left: #{tries}")
+            sleep(sleep_between_retries)
+            retry
+          end
+          error_msg
         end
-        error_msg
       end
       
       def stop_grpc_daemon(daemon_process_id, task_id)
