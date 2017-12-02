@@ -25,8 +25,10 @@ module DTK::Arbiter
       def initialize(message_content, listener)
         super(message_content, listener)
 
-        @service_name    = get(:service_name) || UNKNOWN_SERVICE
-        @version_context = get(:version_context)
+        @service_name     = get(:service_name) || UNKNOWN_SERVICE
+        @version_context  = get(:version_context)
+        @failure_attempts = get(:failure_attempts) || Config::DEFAULT_FAILURE_ATTEMPTS
+        @failure_sleep    = get(:failure_sleep) || Config::DEFAULT_FAILURE_SLEEP
 
         # Make sure this property is set
         ENV['LC_ALL'] = "en_US.UTF-8"
@@ -91,13 +93,15 @@ module DTK::Arbiter
             command_string = "#{cmd} apply #{temp_run_file.path} --debug --modulepath #{MODULE_PATH}"
 
             yum_lock_retries = YUM_LOCK_RETRIES
+            tries = @failure_attempts
+            sleep_between_retries = @failure_sleep
 
             begin
               stdout, stderr, exitstatus, result = Utils::PuppetRunner.execute_cmd_line(command_string)
 
               unless exitstatus == 0
                 # we check if there is yum lock
-                if yum_lock_retries != 0 && ((stderr||'').include?(YUM_LOCK_FILE) || APT_LOCK_PATTERN.any? { |file| (stderr||'').include? file })
+                if tries != 0 && ((stderr||'').include?(YUM_LOCK_FILE) || APT_LOCK_PATTERN.any? { |file| (stderr||'').include? file })
                   raise YumLock, "Yum or Apt lock has been detected!"
                 end
 
@@ -107,8 +111,16 @@ module DTK::Arbiter
               # we wait for YUM process to finish and than we try again
               Log.warn("yum or apt lock has been detected, initiating wait sequence for the running process.")
               File.exists?(YUM_LOCK_FILE) ? wait_for_yum_lock_release : wait_for_apt_lock_release
-              yum_lock_retries -= 1
+              tries -= 1
               retry
+            rescue ActionAbort => e
+              if (tries -= 1) > 0
+                Log.warn("Re-trying Puppet action because of error: #{e.message}, retries left: #{tries}")
+                sleep(sleep_between_retries)
+                retry
+              end
+              # time to give up - sending error response
+              raise e
             end
 
             response = {}

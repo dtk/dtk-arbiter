@@ -10,6 +10,8 @@ module DTK::Arbiter
         super(message_content, listener)
 
         @process_pool = []
+        @failure_attempts = get(:failure_attempts) || Config::DEFAULT_FAILURE_ATTEMPTS
+        @failure_sleep    = get(:failure_sleep) || Config::DEFAULT_FAILURE_SLEEP
         @execution_list = @received_message[:execution_list] || []
         @commander = Commander.new(@execution_list)
       end
@@ -28,10 +30,22 @@ module DTK::Arbiter
           return
         end
 
+        tries = @failure_attempts
+        sleep_between_retries = @failure_sleep
         # start commander runs
-        @commander.run
-        results = @commander.results
+        begin
+          @commander.run
+          results = @commander.results
+          raise ActionAbort, "Not able to execute bash action, exitstatus: '#{results.first[:status]}', error: '#{results.first[:stderr]}'" if are_there_errors_in_results?(results)
 
+        rescue Exception => e
+          if (tries -= 1) > 0
+            Log.warn("Re-trying bash action because of error: #{e.message}, retries left: #{tries}")
+            sleep(sleep_between_retries)
+            retry
+          end
+          Log.warn("No retries left, sending error notification.")
+        end
 
         if are_there_errors_in_results?(results)
           notify_of_error_results(results)

@@ -4,3 +4,4 @@ sftp-config.json
 .vagrant/
 .yardoc
 doc
+.vscode/

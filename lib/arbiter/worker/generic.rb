@@ -14,8 +14,6 @@ module DTK::Arbiter
 
       BASE_DTK_DIR          = '/usr/share/dtk'
       MODULE_DIR            = "#{BASE_DTK_DIR}/modules"
-      MAX_NUMBER_OF_RETRIES = 3
-      SLEEP_BETWEEN_RETRIES = 10 # in seconds, temporary test
       $queue = []
 
       Docker::GarbageCollection.run_garbage_collection
@@ -44,6 +42,8 @@ module DTK::Arbiter
         @bash_script            = get(:execution_environment)[:bash]
         @provider_name_internal = "#{@provider_type}-provider"
         @provider_entrypoint    = "#{MODULE_DIR}/#{@provider_name_internal}/init"
+        @failure_attempts       = get(:failure_attempts) || Config::DEFAULT_FAILURE_ATTEMPTS
+        @failure_sleep          = get(:failure_sleep) || Config::DEFAULT_FAILURE_SLEEP
         $breakpoint             = message_content[:breakpoint]
         @debug_port_request     = message_content[:debug_port_request]
         @debug_port_received    = message_content[:debug_port_received]
@@ -84,16 +84,16 @@ module DTK::Arbiter
 
         provider_run_response = nil
         tries = max_number_of_retries 
+        sleep_between_retries = @failure_sleep
         begin
           provider_run_response = invoke_action
           raise 'gRPC action failed' if provider_run_response['error'] == 'true'
          rescue Exception => e
           if (tries -= 1) > 0
-            Log.info("Re-trying gRPC action because of error: #{e.message}, retries left: #{tries}")
-            sleep(SLEEP_BETWEEN_RETRIES)
+            Log.warn("Re-trying gRPC action because of error: #{e.message}, retries left: #{tries}")
+            sleep(sleep_between_retries)
             retry
           end
-
           # time to give up - sending error response
           raise e
         end
@@ -140,7 +140,7 @@ module DTK::Arbiter
         if @debug_port_request or $breakpoint
           1
         else
-          MAX_NUMBER_OF_RETRIES
+          @failure_attempts
         end
       end
 
@@ -250,7 +250,8 @@ module DTK::Arbiter
       # returns response_hash
       def grpc_call_to_invoke_action
         # send a message to the gRPC provider server/daemon
-        stub = GrpcHelper.arbiter_service_stub(grpc_address, :this_channel_is_insecure, :timeout => 240)
+        timeout = $breakpoint ? { :timeout => 1800 } : { :timeout => 240 }
+        stub = GrpcHelper.arbiter_service_stub(grpc_address, :this_channel_is_insecure, timeout)
 
         provider_opts = {:component_name => @component_name,
                          :module_name => @module_name,
