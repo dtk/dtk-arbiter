@@ -11,6 +11,9 @@ module DTK::Arbiter
       private :initialize
 
       def process
+        # temporary fix for authorize node
+        sleep 1
+
         return notify_of_error("System Worker needs action name to proceed, aborting processing!", :missing_params) unless action_name
         return notify_of_error(ErrorFormatter.action_not_defined(action_name, self), :missing_params) unless self.respond_to?(action_name)
 
