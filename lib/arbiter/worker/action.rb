@@ -41,6 +41,10 @@ module DTK::Arbiter
         rescue Exception => e
           if (tries -= 1) > 0
             Log.warn("Re-trying bash action because of error: #{e.message}, retries left: #{tries}")
+            # Sendint number of retries to server 
+            @listener.update({retries: "#{tries}"},  @request_id, false)
+
+            notify(results)
             sleep(sleep_between_retries)
             retry
           end
