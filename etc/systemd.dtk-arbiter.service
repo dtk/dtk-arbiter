@@ -10,8 +10,8 @@ ExecStart=/usr/share/dtk/dtk-arbiter/wrappers/dtk-arbiter --pid=/var/run/dtk-arb
 ExecReload=/bin/kill -USR1 $MAINPID
 Restart=on-failure
 PIDFile=/var/run/dtk-arbiter.pid
-RestartSec=10
-StartLimitInterval=100
+RestartSec=30
+StartLimitInterval=400
 StartLimitBurst=3
 
 [Install]
