@@ -40,7 +40,9 @@ module DTK::Arbiter
 
         rescue Exception => e
           if (tries -= 1) > 0
+            #require 'byebug'; byebug
             Log.warn("Re-trying bash action because of error: #{e.message}, retries left: #{tries}")
+            @listener.notify({retries: "#{tries}"},  @request_id, false)
             sleep(sleep_between_retries)
             retry
           end
@@ -48,6 +50,7 @@ module DTK::Arbiter
         end
 
         if are_there_errors_in_results?(results)
+          require 'byebug'; byebug
           notify_of_error_results(results)
         else
           notify(results)

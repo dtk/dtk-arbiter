@@ -77,7 +77,7 @@ module DTK
           pong: true,
           heartbeat: true
         }
-        
+
         Log.debug("Sending pong response to '#{Config.outbox_queue}'")
         send(Config.outbox_queue, encode(message))
       end
@@ -117,6 +117,29 @@ module DTK
         return
       end
       
+        Log.info("Sending reply to '#{Config.outbox_queue}': #{message}")
+        send(Config.outbox_queue, encoded_message)
+      end
+
+      def notify(results, request_id, error_response = false, heartbeat = false)
+        raise "Param request_id is mandatory" unless request_id
+        status     = :retrying
+
+        message = {
+          heartbeat: heartbeat,
+          status: status,
+          data: results
+        }
+
+        message[:body].merge!(retrieve_error_info(results)) if error_response
+
+      begin
+        encoded_message = encode(message)
+      rescue Exception => ex
+        Log.fatal("Error encrypting STOMP message, will have to ignore this message. Error: #{ex.message}")
+        return
+      end
+
         Log.info("Sending reply to '#{Config.outbox_queue}': #{message}")
         send(Config.outbox_queue, encoded_message)
       end
