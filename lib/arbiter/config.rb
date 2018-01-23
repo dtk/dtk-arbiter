@@ -134,7 +134,8 @@ module DTK
         begin
           ParseConfig.new(config_path)
         rescue Exception => e
-          Log.warn("We are having issues reading '#{config_path}', reason: '#{e.message}'. This is expected behavior on node startup, exiting gracefully.")
+          # TO-DO: Investigate why Log.warn throws '`synchronize': deadlock; recursive locking (ThreadError)'
+          puts "We are having issues reading '#{config_path}', reason: '#{e.message}'. This is expected behavior on node startup, exiting gracefully."
           exit(0)
         end
       end
