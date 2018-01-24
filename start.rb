@@ -5,8 +5,10 @@ Bundler.setup
 require 'eventmachine'
 require 'daemons'
 require 'optparse'
+require 'grpc'
 
 require_relative('lib/arbiter')
+require_relative('lib/helloworld_services_pb')
 
 # Parsing OPTIONS
 options = {}
@@ -54,6 +56,20 @@ begin
     Signal.trap('INT')  { ::EM.stop }
     Signal.trap('TERM') { ::EM.stop }
     Signal.trap('IOT')  { Arbiter::Log.error("Caught signal IOT(6) which could mean an error occured. Resuming DTK Arbiter normally.") }
+
+    class GreeterServer < Helloworld::Greeter::Service
+      # say_hello implements the SayHello rpc method.
+      def say_hello(hello_req, _unused_call)
+        Helloworld::HelloReply.new(message: "Hello #{hello_req.name}")
+      end
+    end
+
+    Thread.start {
+    s = GRPC::RpcServer.new
+    s.add_http2_port('0.0.0.0:50051', :this_port_is_insecure)
+    s.handle(GreeterServer)
+    s.run_till_terminated
+  }
 
     Arbiter::Log.debug "Starting Arbiter(EventMachine) listener, connecting to #{Arbiter::Config.full_url} ..."
 
