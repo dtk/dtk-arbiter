@@ -6,7 +6,6 @@ require 'google/protobuf'
 Google::Protobuf::DescriptorPool.generated_pool.build do
   add_message "dtkarbiterservice.ProviderMessage" do
     optional :message, :string, 1
-    optional :blah, :string, 2
   end
   add_message "dtkarbiterservice.ArbiterMessage" do
     optional :message, :string, 1

@@ -16,6 +16,23 @@ module DTK::Arbiter
         ::Dtkarbiterservice::ArbiterProvider::Stub.new(*args)
       end
 
+      def self.start_grpc_server
+        Thread.start {
+          s = GRPC::RpcServer.new
+          s.add_http2_port('0.0.0.0:50051', :this_port_is_insecure)
+          s.handle(ArbiterGRPCServer)
+          s.run_till_terminated
+        }
+      end
+
+    end
+  end
+
+  class ArbiterGRPCServer < Dtkarbiterservice::ArbiterProvider::Service
+    # say_hello implements the SayHello rpc method.
+    def process(hello_req, _unused_call)
+      response = {:ok => true}
+      Dtkarbiterservice::ArbiterMessage.new(message: response.to_json)
     end
   end
 end
