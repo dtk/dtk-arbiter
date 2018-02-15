@@ -64,6 +64,7 @@ module DTK::Arbiter
         elsif $task_id == @task_id
           @diff = false
         end
+        @remote_call = get(:remote_call) || false
 	#$task_id = @task_id unless @task_id.nil?
         # Make sure following is prepared
         FileUtils.mkdir_p(MODULE_DIR, mode: 0755) unless File.directory?(MODULE_DIR)
@@ -77,7 +78,7 @@ module DTK::Arbiter
         
         # pulling modules and preparing environment for changes
         Log.info 'Pulling modules from DTK'
-        response = Utils::Git.pull_modules(get(:modules), git_server)
+        response = Utils::Git.pull_modules(get(:modules), git_server) if get(:modules)
         
         # run the provider
         dynamically_load_grpc # grpc must be dynamically loaded to avoid bug DTK-2956
@@ -98,7 +99,12 @@ module DTK::Arbiter
           raise e
         end
 
-        notify(provider_run_response)
+        require 'byebug'; debugger
+        if @listener
+          notify(provider_run_response)
+        else
+          provider_run_response
+        end
       end
 
       def self.cancel_task(message)
@@ -276,7 +282,9 @@ module DTK::Arbiter
         #   return ResponseHash.create_from_json(debug_response.to_json)
         # end
 
-        grpc_json_response = stub.process(Dtkarbiterservice::ProviderMessage.new(message: provider_message)).message
+        return_message = @remote_call ? Dtkarbiterservice::ArbiterResponseMessage.new(message: provider_message) : Dtkarbiterservice::ProviderMessage.new(message: provider_message)
+        require 'byebug'; debugger
+        grpc_json_response = stub.process(return_message).message
         Log.info 'gRPC daemon response received'
         ResponseHash.create_from_json(grpc_json_response)
       end

@@ -10,6 +10,7 @@ module DTK::Arbiter
   class Worker::Generic
     module GrpcHelper
       require_relative('grpc_helper/logger')
+      require_relative('grpc_helper/arbitergrpc_services_pb')
       require_relative('grpc_helper/dtkarbiterservice_services_pb')
 
       def self.arbiter_service_stub(*args)
@@ -28,11 +29,22 @@ module DTK::Arbiter
     end
   end
 
-  class ArbiterGRPCServer < Dtkarbiterservice::ArbiterProvider::Service
-    # say_hello implements the SayHello rpc method.
-    def process(hello_req, _unused_call)
-      response = {:ok => true}
-      Dtkarbiterservice::ArbiterMessage.new(message: response.to_json)
+  class ArbiterGRPCServer < Dtkarbiterservice::ArbiterRemoteCall::Service
+    def process(message, _unused_call)
+      message = {:agent=>"generic_worker", 
+                 :method=>"run", 
+                 :remote_call=>true,
+                 :protocol_version=>1, 
+                 :provider_type=>"ruby", 
+                 :service_instance=>"ruby_provider_test_module-test_without_delete", 
+                 :component=>{:type=>"ruby_provider_test_module::test_without_delete", :version=>"0.9.5", :title=>"node", :namespace=>"r8", :module_name=>"ruby_provider_test_module"}, 
+                 :attributes=>
+                   {:provider=>{"entrypoint"=>{:value=>"bin/create.rb", :datatype=>"string", :hidden=>false}}, 
+                    :instance=>{"system.service_instance_name"=>{:value=>"mongodb-mongo_with_replica_sets-4", :datatype=>"string", :hidden=>false},"instance_type"=>{:value=>nil, :datatype=>"string", :hidden=>false}}}, 
+                    :execution_environment=>{:type=>"bash"}, :pbuilderid=>"docker-executor"}
+      generic_worker = ::DTK::Arbiter::Worker::Generic.new(message, nil)
+      response = generic_worker.process
+      Dtkarbiterservice::ArbiterResponseMessage.new(message: response.to_json)
     end
   end
 end
