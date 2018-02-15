@@ -99,7 +99,6 @@ module DTK::Arbiter
           raise e
         end
 
-        require 'byebug'; debugger
         if @listener
           notify(provider_run_response)
         else
@@ -283,7 +282,6 @@ module DTK::Arbiter
         # end
 
         return_message = @remote_call ? Dtkarbiterservice::ArbiterResponseMessage.new(message: provider_message) : Dtkarbiterservice::ProviderMessage.new(message: provider_message)
-        require 'byebug'; debugger
         grpc_json_response = stub.process(return_message).message
         Log.info 'gRPC daemon response received'
         ResponseHash.create_from_json(grpc_json_response)
