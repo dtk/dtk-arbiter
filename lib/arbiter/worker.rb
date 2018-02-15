@@ -63,7 +63,7 @@ module DTK
       end
 
       def notify_of_error(error_message, error_type = :arbiter_error)
-        @listener.update([{ error: error_message, time: Time.now.to_s, type: error_type }], @request_id, true)
+        @listener.update([{ error: error_message, time: Time.now.to_s, type: error_type }], @request_id, true) if @listener
       end
 
       def notify_of_error_results(results)
