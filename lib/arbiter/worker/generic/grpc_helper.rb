@@ -31,18 +31,27 @@ module DTK::Arbiter
 
   class ArbiterGRPCServer < Dtkarbiterservice::ArbiterRemoteCall::Service
     def process(message, _unused_call)
-      message = {:agent=>"generic_worker", 
+      message_hash = JSON.parse(message.message)
+      attributes = message_hash["attributes"]
+      component_name = message_hash["component_name"]
+      module_name = component_name.split("::").first
+      attributes_converted = {}
+      attributes.each do |k,v|
+        attributes_converted.merge!({k.to_s => {:value => v, :datatype=>"string", :hidden=>false}})
+      end
+      message_hardcoded = {:agent=>"generic_worker", 
                  :method=>"run", 
                  :remote_call=>true,
                  :protocol_version=>1, 
                  :provider_type=>"ruby", 
-                 :service_instance=>"ruby_provider_test_module-test_without_delete", 
-                 :component=>{:type=>"ruby_provider_test_module::test_without_delete", :version=>"0.9.5", :title=>"node", :namespace=>"r8", :module_name=>"ruby_provider_test_module"}, 
+                 :service_instance=>module_name, 
+                 :component=>{:type=>component_name, :version=>"0.9.5", :title=>"node", :namespace=>module_name, :module_name=>module_name}, 
                  :attributes=>
-                   {:provider=>{"entrypoint"=>{:value=>"bin/create.rb", :datatype=>"string", :hidden=>false}}, 
-                    :instance=>{"system.service_instance_name"=>{:value=>"mongodb-mongo_with_replica_sets-4", :datatype=>"string", :hidden=>false},"instance_type"=>{:value=>nil, :datatype=>"string", :hidden=>false}}}, 
+                   {:provider=>{"entrypoint"=>{:value=>"bin/object__converge.rb", :datatype=>"string", :hidden=>false}}, 
+                    :instance=>{"system.service_instance_name"=>{:value=>module_name, :datatype=>"string", :hidden=>false},"instance_type"=>{:value=>nil, :datatype=>"string", :hidden=>false}}}, 
                     :execution_environment=>{:type=>"bash"}, :pbuilderid=>"docker-executor"}
-      generic_worker = ::DTK::Arbiter::Worker::Generic.new(message, nil)
+      message_hardcoded[:attributes][:instance].merge!(attributes_converted)
+      generic_worker = ::DTK::Arbiter::Worker::Generic.new(message_hardcoded, nil)
       response = generic_worker.process
       Dtkarbiterservice::ArbiterResponseMessage.new(message: response.to_json)
     end
