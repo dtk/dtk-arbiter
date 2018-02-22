@@ -37,14 +37,15 @@ module DTK::Arbiter
       module_name = component_name.split("::").first
       attributes_converted = {}
       attributes.each do |k,v|
-        attributes_converted.merge!({k.to_s => {:value => v, :datatype=>"string", :hidden=>false}})
+        datatype = (v.class == Hash) ? 'json' : 'string'
+        attributes_converted.merge!({k.to_s => {:value => v, :datatype=>datatype, :hidden=>false}})
       end
       message_hardcoded = {:agent=>"generic_worker", 
                  :method=>"run", 
                  :remote_call=>true,
-                 :protocol_version=>1, 
-                 :provider_type=>"ruby", 
-                 :service_instance=>module_name, 
+                 :protocol_version=>1,
+                 :provider_type=>"ruby",
+                 :service_instance=>module_name,
                  :component=>{:type=>component_name, :version=>"0.9.5", :title=>"node", :namespace=>module_name, :module_name=>module_name}, 
                  :attributes=>
                    {:provider=>{"entrypoint"=>{:value=>"bin/object__converge.rb", :datatype=>"string", :hidden=>false}}, 
