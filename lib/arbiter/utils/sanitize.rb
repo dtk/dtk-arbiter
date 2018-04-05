@@ -14,7 +14,7 @@ module DTK::Arbiter
       private
       
       def self.sanitize_attribute(name, attr_info)
-        (attr_info[:hidden] || ['password', 'secret'].any? { |pattern| name.downcase.include? pattern }) ? attr_info.merge(value: HIDDEN_VALUE) : attr_info 
+        (attr_info[:hidden] || ['password', 'secret'].any? { |pattern| name.to_s.downcase.include? pattern }) ? attr_info.merge(value: HIDDEN_VALUE) : attr_info 
       end
     end
   end
